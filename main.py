@@ -9,12 +9,14 @@ def main():
     dec = 0
     stars = data_api.get_nearby_stars(ra, dec)
     
+    name = stars["name"]
     x = stars["x"]
     y = stars["y"]
     size = stars["size"]
+    distance = stars["distance"]
 
     for i in range(len(x)):
-        print(f"Star {i}: x={x[i]}, y={y[i]}, size={size[i]}")
+        print(f"Star {name[i]}: x={x[i]}, y={y[i]}, distance={distance[i]}")
 
 if __name__ == "__main__":
     main()
