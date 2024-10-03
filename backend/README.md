@@ -1,7 +1,5 @@
 # Exosky-NASA
 
-> For easy implement, current use local python instead of virtual environment.
-
 ## Set up for backend
 1. Build frontend pkg
    ```bash
@@ -14,11 +12,23 @@
    ├── css/ 
    ├── index.js
    ```
-3. Get into `backend` and install dependencies
+3. Create an virtual environment in `backend/`
+   ```bash
+   python -m venv .venv
+
+   # activate
+   # In powershell
+   ./.venv/Scripts/Activate.ps1
+   # Or in unix
+   source .venv/Scripts/activate
+
+   # After activated, you should see (.venv) prefix in your shell.
+   ```
+4. Install dependencies
    ```bash
    pip install -r requirements.txt
    ```
-4. Run the server!
+5. Run the server!
    ```bash
    fastapi dev main.py
    ```
