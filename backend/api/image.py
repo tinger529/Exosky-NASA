@@ -9,11 +9,11 @@ from fastapi.responses import StreamingResponse
 
 router = APIRouter()
 
-@router.get("/generate")
+@router.get("/generate/")
 async def generate_image(ra: float, dec: float):
     """
     Generate an image based on given Right Ascension (ra) and Declination (dec).
-    Example query: /image/generate?ra=162.530&dec=30.677
+    Example query: /image/generate/?ra=162.530&dec=30.677
     """
     try:
         # Get the image data
