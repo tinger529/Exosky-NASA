@@ -7,7 +7,6 @@ import numpy as np
 # Api official documentation and examples: https://astroquery.readthedocs.io/en/latest/gaia/gaia.html
 # https://gea.esac.esa.int/archive/documentation/GDR2/Gaia_archive/chap_datamodel/sec_dm_main_tables/ssec_dm_gaia_source.html
 
-
 '''
 Switch to cartesian coordinate system and project to 2D.
 Args:
@@ -32,7 +31,6 @@ def ra_dec_to_xy(ra_deg, dec_deg):
     
     return x_prime, y_prime
 
-
 '''
 Switch to cartesian coordinate system and remain in 3D.
 Args:
@@ -54,7 +52,6 @@ def ra_dec_to_xyz(ra_deg, dec_deg, dis):
     z = np.sin(dec)
     
     return x, y, z
-    
 
 '''
 Calculate the relative position of the target star from the source star and project to 2D.
@@ -125,8 +122,6 @@ def view_transform(ex_ra, ex_dec, ra, dec):
 
     print("after transform: ", ret_ra, ret_dec)
     return ret_ra, ret_dec
-    
-    
 
 '''
 Return stars' positional information, observed from the earth.
@@ -179,7 +174,6 @@ def get_skyview_from_earth(ra, dec, fovy_w=1, fovy_h=1):
 
     return data_dict
     
-
 '''
 Return stars' positional information, observed from the exoplanet.
 Args:
@@ -243,9 +237,3 @@ def get_skyview_from_exoplanet(ex_ra, ex_dec, ex_distance, ra, dec, fovy_w=1, fo
     }
 
     return data_dict
-
-    
-        
-
-
-    
