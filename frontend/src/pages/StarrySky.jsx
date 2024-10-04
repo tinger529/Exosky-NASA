@@ -52,6 +52,9 @@ const StarryNight = () => {
   const [latitude, setLatitude] = useState(23.5);
   const [hoveredStar, setHoveredStar] = useState(null);
 
+  const [tempRotSpeed, setTempRotSpeed] = useState(0.0005);
+  const [tempLatitude, setTempLatitude] = useState(23.5);
+
   useEffect(() => {
     let stars_objs = [];
     let sky_group, ground_group, ground_circle, scene, camera, renderer, textue_loader, font_loader;
@@ -391,15 +394,20 @@ const StarryNight = () => {
       window.removeEventListener('resize', window_resize);
       mountRef.current.removeChild(renderer.domElement);
     };
-  }, [latitude, rotSpeed]);
+  }, [rotSpeed, latitude]);
 
   const handleRotSpeedChange = (event) => {
-    const newSpeed = parseFloat(event.target.value) / 10000;
-    setRotSpeed(newSpeed);
+    setTempRotSpeed(parseFloat(event.target.value) / 10000);
   };
 
   const handleLatitudeChange = (event) => {
-    setLatitude(event.target.value);
+    setTempLatitude(parseFloat(event.target.value));
+  };
+
+  const applySettings = () => {
+    const newLatitude = Math.max(-90, Math.min(90, tempLatitude));
+    setLatitude(newLatitude);
+    setRotSpeed(tempRotSpeed);
   };
 
   return (
@@ -412,7 +420,7 @@ const StarryNight = () => {
             type="range"
             min="0"
             max="100"
-            value={rotSpeed * 10000}
+            value={tempRotSpeed * 10000}
             onChange={handleRotSpeedChange}
           />
         </label>
@@ -421,11 +429,12 @@ const StarryNight = () => {
           Latitude:
           <input
             type="number"
-            value={latitude}
+            value={tempLatitude}
             onChange={handleLatitudeChange}
             style={{ width: '60px' }}
           />
         </label>
+        <button onClick={applySettings}>Set Latitude & Speed</button>
       </div>
       {hoveredStar && (
         <div style={{
