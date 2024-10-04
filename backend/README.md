@@ -17,12 +17,13 @@
    ```bash
    pip install -r requirements.txt
    ```
-3. Run the server!
-   - backend, in `backend/` folder
+3. To execute test cases, add direcotry `image` as `backend/test/images`.
+4. Run the server!
+   - backend, in `backend/` directory
       ```bash
       fastapi dev main.py
       ```
-   - frontend, in `frontend/` folder
+   - frontend, in `frontend/` directory
       ```bash
       npm run start
       ```
@@ -35,6 +36,8 @@
 Exosky-NASA/
 ├── backend/
 │   ├── static/             # Static files directory
+│   ├── api/                # Main api and routers
+│   ├── test/               # Test api and routers
 │   ├── main.py             # FastAPI entry point
 ├── frontend/
 │   ├── build/
