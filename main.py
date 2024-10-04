@@ -1,15 +1,13 @@
-import data_api
+import test
 
 # Current implementation is for testing only
 
 def main():
     
     # Example usage of the data_api module
-    ra = 20, dec = 0
-    stars = data_api.get_skyview_from_earth(ra, dec)
-
-    for i in range(len(stars["x"])):
-        print(f"Star {stars["name"][i]}: x={stars["x"][i]}, y={stars["y"][i]}, distance={stars["distance"][i]}")
+    test.test_view_from_earth(print_result=False, show_plot=True)
+    test.test_view_from_exoplanet(print_result=False, show_plot=True)
+    print("All tests completed.")
 
 if __name__ == "__main__":
     main()

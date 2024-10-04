@@ -1,8 +1,7 @@
 from astroquery.gaia import Gaia
 from astropy.coordinates import SkyCoord
 import astropy.units as u
-import numpy as np    
-import matplotlib.pyplot as plt  
+import numpy as np     
 
 # Data api for accessing gaia data from NASA
 # Api official documentation and examples: https://astroquery.readthedocs.io/en/latest/gaia/gaia.html
@@ -50,9 +49,9 @@ def ra_dec_to_xyz(ra_deg, dec_deg, dis):
     dec = np.radians(dec_deg)
 
     # Convert to 3D Cartesian coordinates
-    x = dis * np.cos(dec) * np.cos(ra)
-    y = dis * np.cos(dec) * np.sin(ra)
-    z = dis * np.sin(dec)
+    x = np.cos(dec) * np.cos(ra)
+    y = np.cos(dec) * np.sin(ra)
+    z = np.sin(dec)
     
     return x, y, z
     
@@ -100,6 +99,7 @@ Returns:
 def view_transform(ex_ra, ex_dec, ra, dec):
     sign_ra, sign_dec = 1, 1
 
+    print("before transform: ", ra, dec)
     # check viewing angle
     if dec * ex_dec < 0:
         sign_dec = -1
@@ -109,7 +109,7 @@ def view_transform(ex_ra, ex_dec, ra, dec):
     # change angle range for easy calculation
     if ra > 180:
         ra = 360 - ra
-    dec += 90
+    dec = 90-dec
 
     # start transformation
     ret_ra, ret_dec = 0, 0
@@ -123,6 +123,7 @@ def view_transform(ex_ra, ex_dec, ra, dec):
     else:
         ret_dec = ex_dec + (2 * dec - 180) * sign_dec
 
+    print("after transform: ", ret_ra, ret_dec)
     return ret_ra, ret_dec
     
     
@@ -224,6 +225,7 @@ def get_skyview_from_exoplanet(ex_ra, ex_dec, ex_distance, ra, dec, fovy_w=1, fo
     # calculate relative position of the stars from the exoplanet
     for i in range(l):
         x_vals[i], y_vals[i] = get_relative_pos(ex_ra, ex_dec, ex_distance, ra_values[i], dec_values[i], distance[i])
+        #x_vals[i], y_vals[i] = ra_dec_to_xy(ra_values[i], dec_values[i])
 
     # Size proxy (lower magnitude = brighter)
     size_normalized = (np.max(mag_values) - mag_values) / (np.max(mag_values) - np.min(mag_values)) * 20 # Scale to 20
