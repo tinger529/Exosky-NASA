@@ -3,6 +3,7 @@ from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 from api import router as api_router
+from test import router as test_router
 from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI()
@@ -24,3 +25,4 @@ static_directory = os.path.join(os.path.dirname(os.path.abspath(__file__)), "sta
 app.mount("/static", StaticFiles(directory=static_directory), name="static")
 
 app.include_router(api_router, prefix="/api/v1")
+app.include_router(test_router, prefix="/api/v1")
