@@ -1,9 +1,11 @@
 import React from 'react';
+import StarrySky from './StarrySky';
 
 function MainPage() {
   return (
     <div>
-      <h1>Main Page</h1>
+      <StarrySky />
+      
     </div>
   );
 }
