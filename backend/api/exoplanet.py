@@ -9,6 +9,10 @@ router = APIRouter()
 
 @router.get("/all")
 async def get_exoplanet_list():
+    """
+    Retrieve exoplanet list.
+    Example: /exoplanet/all
+    """
     global sample_data
     
     if not sample_data:
@@ -21,7 +25,7 @@ async def get_exoplanet_list():
 @router.get("/{pl_name}")
 async def get_exoplanet(pl_name: str):
     """
-    Retrieve sample information based on the pl_name.
+    Retrieve exoplanet information based on the pl_name.
     Example: /exoplanet/11%20Com%20b
     """
     global sample_data
