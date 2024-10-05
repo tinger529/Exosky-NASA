@@ -67,6 +67,9 @@ def get_skyview_from_exoplanet(ex_ra, ex_dec, ex_distance, ra, dec, fovy_w=30, f
     bv_colors = []
     ra_mean = np.mean(ra_values)
     dec_mean = np.mean(dec_values)
+    bp_mag = r['phot_bp_mean_mag']
+    rp_mag = r['phot_rp_mean_mag']
+    
     
     # calculate relative position of the stars from the exoplanet
     for i in range(l):
@@ -77,11 +80,10 @@ def get_skyview_from_exoplanet(ex_ra, ex_dec, ex_distance, ra, dec, fovy_w=30, f
         # ra_values[i], dec_values[i] = xyz_to_ra_dec(x, y, z)
         # print(ra_values[i], dec_values[i], distance[i])
         
-        bp_mag = r['phot_bp_mean_mag'][0]
-        rp_mag = r['phot_rp_mean_mag'][0]
-            
+        bm = bp_mag[i]
+        rm = rp_mag[i]
         # Calculate an approximate B-V color index
-        bv_color_index = 0.751 * (bp_mag - rp_mag)
+        bv_color_index = 0.751 * (bm - rm)
         bv_colors.append(bv_color_index)
 
     # Size proxy (lower magnitude = brighter)
