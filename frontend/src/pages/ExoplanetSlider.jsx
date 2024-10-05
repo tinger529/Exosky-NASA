@@ -3,7 +3,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import * as THREE from 'three';
 import exoplanets from './Exoplanet'; // Adjust the path as necessary
 import Snowflakes from '../components/SnowFlakes';
-
+import { useNavigate } from 'react-router-dom'; // Import useNavigate
 
 const ExoplanetDisc = () => {
   const mountRef = useRef(null);
@@ -11,13 +11,18 @@ const ExoplanetDisc = () => {
   const [isDragging, setIsDragging] = useState(false);
   const [startX, setStartX] = useState(0);
   const [selectedPlanet, setSelectedPlanet] = useState(null);
+  const navigate = useNavigate(); // Initialize navigate
 
   useEffect(() => {
     const scene = new THREE.Scene();
     const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
     const renderer = new THREE.WebGLRenderer({ antialias: true });
     renderer.setSize(window.innerWidth, window.innerHeight);
-    mountRef.current.appendChild(renderer.domElement);
+
+    // Append the renderer's DOM element only if mountRef.current is available
+    if (mountRef.current) {
+      mountRef.current.appendChild(renderer.domElement);
+    }
 
     const light = new THREE.AmbientLight(0x404040); // soft white light
     scene.add(light);
@@ -116,7 +121,11 @@ const ExoplanetDisc = () => {
       window.removeEventListener('mousemove', handleMouseMove);
       window.removeEventListener('mouseup', handleMouseUp);
       window.removeEventListener('click', handleMouseClick);
-      mountRef.current.removeChild(renderer.domElement);
+
+      // Remove the renderer's DOM element only if it was appended
+      if (mountRef.current && mountRef.current.contains(renderer.domElement)) {
+        mountRef.current.removeChild(renderer.domElement);
+      }
     };
   }, [rotation, isDragging, startX]);
 
@@ -125,6 +134,7 @@ const ExoplanetDisc = () => {
 
   const handleSelectButtonClick = () => {
     setSelectedPlanet(frontPlanet);
+    navigate('/main'); // Navigate to the main page
   };
 
   return (
