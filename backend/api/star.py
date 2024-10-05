@@ -17,18 +17,12 @@ class SkyviewParams(BaseModel):
     dec: float
     
 @router.post("/skyview/exoplanet")
-async def get_star_from_exoplanet(params: SkyviewParams):
+async def get_stars_from_exoplanet(params: SkyviewParams):
     """
-    Retrieve stars from exoplanet by given params.
-    Param:
-    {
-        "ex_ra": float,
-        "ex_dec": float,
-        "ex_distance": float,
-        "ra": float,
-        "dec": float
-    }
+    Retrieve stars from exoplanet by given params:
+    Exoplanet Right Ascension (ex_ra), Exoplanet Declination (ex_dec), Exoplanet Distance (ex_distance), Right Ascension (ra) and Declination (dec).
     """
+    
     skyview = get_skyview_from_exoplanet(
         params.ex_ra,
         params.ex_dec,
@@ -46,14 +40,9 @@ async def get_star_from_exoplanet(params: SkyviewParams):
     })
     
 @router.post("/skyview/earth/")
-async def get_star_from_earth2(params: SkyviewParams):
+async def get_stars_from_earth(params: SkyviewParams):
     """
     Retrieve stars from earth by given Right Ascension (ra) and Declination (dec).
-    Param:
-    {
-        "ra": float,
-        "dec": float
-    }
     """
     ra = params.ra
     dec = params.dec
