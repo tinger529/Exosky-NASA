@@ -1,33 +1,92 @@
 import json
+from typing import Optional
 from fastapi import APIRouter, HTTPException
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import JSONResponse
-from numpy import double
+from matplotlib.pyplot import flag
+from pydantic import BaseModel
 
 from api.data_api import get_skyview_from_exoplanet, get_skyview_from_earth
 
 router = APIRouter()
 
-@router.get("/skyview/exoplanet")
-async def get_star_from_exoplanet(ex_ra, ex_dec, ex_distance, ra, dec):
-    skyview = get_skyview_from_exoplanet(int(ex_ra), int(ex_dec), double(ex_distance), int(ra), int(dec))
+class SkyviewParams(BaseModel):
+    ex_ra: Optional[float] = None
+    ex_dec: Optional[float] = None
+    ex_distance: Optional[float] = None
+    ra: float
+    dec: float
     
-    return  JSONResponse(status_code=200, content={
-        "name": skyview["name"],
-        "ra": [str(it) for it in skyview["ra"]],
-        "dec": [str(it) for it in skyview["dec"]],
-        "vmag": [str(it) for it in skyview["brightness"]],
-        "bv": [str(it) for it in skyview["bv"]],
-    })
+class Star():
+    def __init__(self, name: str, ra: float, dec: float, vmag: float, bv: float):
+        self.name = name
+        self.ra = ra
+        self.dec = dec
+        self.vmag = vmag
+        self.bv = bv
+    
+    def to_dict(self):
+        return {
+            "name": self.name,
+            "ra": str(self.ra),
+            "dec": str(self.dec),
+            "vmag": str(self.vmag),
+            "bv": str(self.bv)
+        }
+        
+    
+@router.post("/skyview/exoplanet")
+async def get_stars_from_exoplanet(params: SkyviewParams):
+    """
+    Retrieve stars from exoplanet by given params:
+    Exoplanet Right Ascension (ex_ra), Exoplanet Declination (ex_dec), Exoplanet Distance (ex_distance), Right Ascension (ra) and Declination (dec).
+    """
+    
+    if not params.ex_ra or not params.ex_dec or not params.ex_distance or not params.ra or not params.dec:
+        raise HTTPException(status_code=400, detail="Invalid parameters")
+    
+    skyview = get_skyview_from_exoplanet(
+        params.ex_ra,
+        params.ex_dec,
+        params.ex_distance,
+        params.ra,
+        params.dec
+    )
+    
+    star_list = []
+    
+    for i in range(len(skyview["name"])):
+        star_list.append(Star(
+            skyview["name"][i], skyview["ra"][i], skyview["dec"][i], skyview["brightness"][i], skyview["bv"][i],
+        ))
+    
+    star_dict = [star.to_dict() for star in star_list]
+    response_data = json.dumps({"stars":star_dict})
+    
 
-@router.get("/skyview/earth/")
-async def get_star_from_earth(ra, dec):
+    return JSONResponse(status_code=200, content=response_data)
+    
+@router.post("/skyview/earth/")
+async def get_stars_from_earth(params: SkyviewParams):
+    """
+    Retrieve stars from earth by given Right Ascension (ra) and Declination (dec).
+    """
+    if params.ex_ra or params.ex_dec or params.ex_distance:
+        raise HTTPException(status_code=400, detail="Invalid parameters")
+    
+    ra = params.ra
+    dec = params.dec
+    
     skyview = get_skyview_from_earth(int(ra), int(dec))
     
-    return  JSONResponse(status_code=200, content={
-        "name": skyview["name"],
-        "ra": [str(it) for it in skyview["ra"]],
-        "dec": [str(it) for it in skyview["dec"]],
-        "vmag": [str(it) for it in skyview["brightness"]],
-        "bv": [str(it) for it in skyview["bv"]],
-    })
+    star_list = []
+    
+    for i in range(len(skyview["name"])):
+        star_list.append(Star(
+            skyview["name"][i], skyview["ra"][i], skyview["dec"][i], skyview["brightness"][i], skyview["bv"][i],
+        ))
+    
+    star_dict = [star.to_dict() for star in star_list]
+    response_data = json.dumps({"stars":star_dict})
+    
+    return JSONResponse(status_code=200, content=response_data)

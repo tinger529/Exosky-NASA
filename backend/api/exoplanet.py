@@ -1,11 +1,28 @@
 from fastapi import APIRouter, HTTPException
+from fastapi.responses import JSONResponse
 from fastapi.routing import APIRoute
+import json
 import pandas as pd
 import csv
 import os
 
-sample_data = {}
+exoplanet_list = []
 router = APIRouter()
+
+class Exoplanet:
+    def __init__(self, pl_name, hostname, pl_orbper, sy_dist) -> None:
+        self.pl_name = pl_name
+        self.hostname = hostname
+        self.pl_orbper = pl_orbper
+        self.sy_dist = sy_dist
+        
+    def to_dict(self):
+        return {
+            "pl_name": self.pl_name,
+            "hostname": self.hostname,
+            "pl_orbper": self.pl_orbper,
+            "sy_dist": self.sy_dist
+        }
 
 @router.get("/all")
 async def get_exoplanet_list():
@@ -13,64 +30,43 @@ async def get_exoplanet_list():
     Retrieve exoplanet list.
     Example: /exoplanet/all
     """
-    global sample_data
+    global exoplanet_list
     
-    if not sample_data:
+    if not exoplanet_list:
         get_exoplanet_dict()
         
-    return {
-        "pl_name": list(sample_data.keys())
-    }
+    exoplanet_dict = [exoplanet.to_dict() for exoplanet in exoplanet_list]
+    response_data = json.dumps({"exoplanets": exoplanet_dict})
+                    
+    return JSONResponse(status_code=200, content=response_data)
 
-@router.get("/{pl_name}")
-async def get_exoplanet(pl_name: str):
-    """
-    Retrieve exoplanet information based on the pl_name.
-    Example: /exoplanet/11%20Com%20b
-    """
-    global sample_data
-    
-    if not sample_data:
-        get_exoplanet_dict()
-    
-    if pl_name in sample_data:
-        return {
-            "pl_name": pl_name,
-            "data": sample_data[pl_name]
-        }
-    else:
-        raise HTTPException(status_code=404, detail=f"Sample '{pl_name}' not found")
-    
 
-def get_exoplanet_dict():
+def get_exoplanet_dict() -> None:
+    """
+    Initialize global variable (sample_data, i.e. Exoplanet collection) 
+    """
+    
     file_path = os.path.join(os.path.dirname(
         os.path.abspath(__file__)), "../static/Exoplanet.csv")
 
-    global sample_data
+    global exoplanet_list
 
     with open(file_path, 'r') as file:
         reader = csv.reader(file)
-        header = next(reader)
 
         for row in reader:
+            # Skip columns comment and first row (title)
             if not row[0].startswith('#') and row[0] != "pl_name":
-                sample_data[row[0]] = row[1:]
+                exoplanet_list.append(Exoplanet(
+                    row[0], row[1], row[2], row[14],
+                ))
                 
-    # Two dimensional view
-    # frame_data = pd.DataFrame(sample_data)
-                
-    return sample_data
-
-if __name__ == "__init__":
-    get_exoplanet_dict()
-
-
 """
 Indices
 
-0: Planet Name: 'pl_name', 
-1: Host Name: 'hostname', 
-2: Orbital Period [days]: 'pl_orbper', 
+>> 0: Planet Name: 'pl_name', 
+>> 1: Host Name: 'hostname', 
+>> 2: Orbital Period [days]: 'pl_orbper', 
 3: Orbital Period Upper Unc. [days]: 'pl_orbpererr1', 
 4: Orbital Period Lower Unc. [days]: 'pl_orbpererr2', 
 5: Orbital Period Limit Flag: 'pl_orbperlim', 
@@ -82,7 +78,7 @@ Indices
 11: RA [deg]: 'ra', 
 12: Dec [sexagesimal]: 'decstr', 
 13: Dec [deg]:'dec', 
-14: Distance [pc]: 'sy_dist', 
+>> 14: Distance [pc]: 'sy_dist', 
 15: Distance [pc] Upper Unc: 'sy_disterr1', 
 16: Distance [pc] Lower Unc: 'sy_disterr2', 
 17: Parallax [mas]: 'sy_plx', 
