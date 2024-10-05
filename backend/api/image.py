@@ -13,7 +13,7 @@ router = APIRouter()
 async def generate_image(ra: float, dec: float):
     """
     Generate an image based on given Right Ascension (ra) and Declination (dec).
-    Example query: /exoplanet/image/?ra=162.530&dec=30.677
+    Example query: /star/image/?ra=162.530&dec=30.677
     """
     try:
         # Get the image data
