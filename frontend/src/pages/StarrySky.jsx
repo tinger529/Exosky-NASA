@@ -144,75 +144,97 @@ const StarryNight = () => {
     let raycaster, mouse;
 
     //for rendering the stars 
-    function load_stars() {
-      fetch(`${process.env.PUBLIC_URL}/stars_catalog.json`)
-          .then(response => response.json())
-          .then(data => {
-              const starcat = data.stars;
-              
-              for (let ct = 0; ct < starcat.length; ct++) {
-                  const st = starcat[ct];
-                  
-                  //name
-                  const name = st.name.substring(4, 14).trim();
-                  
-                  //the stats of the star, angles are in radians
-                  //right ascension
-                  const ra = (parseFloat(st.RA[0]) / 24 + parseFloat(st.RA[1]) / (24*60) + parseFloat(st.RA[2]) / (24*60*60)) * 2 * Math.PI;
-                  //declination
-                  let de = (parseFloat(st.DE[1]) / 360 + parseFloat(st.DE[2]) / (360*60) + parseFloat(st.DE[3]) / (360*60*60)) * 2 * Math.PI;
-                  if (st.DE[0] === "-") {// if -ve sign
-                      de = -de;
-                  }
-                  //visual magnitude (i.e. brightness)
-                  const vmag = parseFloat(st.vmag);
-                  
-                  //calculate the xyz coordinate of this star using modified spherical coordinate system
-                  //equations here: https://en.wikipedia.org/wiki/Equatorial_coordinate_system
-                  const sx = 10000 * Math.cos(de) * Math.cos(ra);
-                  const sy = 10000 * Math.cos(de) * Math.sin(ra);
-                  const sz = 10000 * Math.sin(de);
-                  
-                  if (isNaN(sx) || isNaN(sy) || isNaN(sz)) {
-                      console.log("star data missing/malformed: " + st.name + ": " + sx + ", " + sy + ", " + sz);
-                      continue;
-                  }
-                  
-                  //calculate the size (lower vmag -> brighter -> larger dot visually)
-                  const osize = 75 * Math.pow(1.35, Math.min(-vmag, 0.15));
-                  
-                  //get the color (from bv index)
-                  const bv = parseFloat(st.bv);
-                  const st_color = bv2rgb(bv);
-                  
-                  //create the model object
-                  const geometry = new THREE.SphereGeometry(osize, 18, 10);
-                  const material = new THREE.ShaderMaterial({
-                      uniforms: {
-                          baseColor: {type: "c", value: new THREE.Color(st_color[0], st_color[1], st_color[2])},
-                          viewVector: { type: "v3", value: camera.position },
-                          starObjPosition: { type: "v3", value: new THREE.Color(sy, sz, sx) },
-                      },
-                      vertexShader: _VS,
-                      fragmentShader: _FS,
-                      blending: THREE.AdditiveBlending,
-                  });
-                  
-                  const star = new THREE.Mesh(geometry, material);
-                  
-                  //set position and add to scene
-                  star.position.x = sy;
-                  star.position.y = sz;
-                  star.position.z = sx;
-                  star.name = name;
-                  star.userData.originalSize = osize;
-                  sky_group.add(star);
-                  stars_objs.push(star);
-              }
-              console.log(`Loaded ${stars_objs.length} stars`);
-          })
-          .catch(error => console.error('Error loading stars catalog:', error));
-  }
+    async function load_stars() {
+      // Example values for testing
+      const ex_ra = 0;  // Right ascension of exoplanet
+      const ex_dec = 0; // Declination of exoplanet
+      const ex_distance = 10; // Distance of exoplanet in parsecs
+      const ra = 0; // Observed right ascension
+      const dec = 0; // Observed declination
+    
+      try {
+        const response = await fetch(`http://localhost:8000/api/v1/star/skyview/exoplanet/?ex_ra=${ex_ra}&ex_dec=${ex_dec}&ex_distance=${ex_distance}&ra=${ra}&dec=${dec}`, {
+          method: 'GET',
+          headers: {
+            'Accept': 'application/json',
+          },
+        });
+    
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        const response2 = await fetch(`http://localhost:8000/api/v1/star/skyview/exoplanet/?ex_ra=${ex_ra}&ex_dec=${ex_dec}&ex_distance=${ex_distance}&ra=${ra+180}&dec=${dec}`, {
+          method: 'GET',
+          headers: {
+            'Accept': 'application/json',
+          },
+        });
+    
+        if (!response2.ok) {
+          throw new Error(`HTTP error! status: ${response2.status}`);
+        }  
+
+        const starData1 = await response.json();
+        const starData2 = await response2.json();
+        const starData = {}
+        for (const key in starData1) {
+          if (starData1.hasOwnProperty(key) && starData2.hasOwnProperty(key)) {
+              starData[key] = [...starData1[key], ...starData2[key]];
+          }
+      }
+    
+        for (let i = 0; i < starData.name.length; i++) {
+          const name = starData.name[i];
+          const ra = parseFloat(starData.ra[i]);
+          const dec = parseFloat(starData.dec[i]);
+          const vmag = parseFloat(starData.vmag[i]);
+          const bv = parseFloat(starData.bv[i]);
+    
+          // Convert RA and Dec to x, y, z coordinates
+          const phi = ra * (Math.PI / 180);
+          const theta = (90 - dec) * (Math.PI / 180);
+          const radius = 10000; // Adjust this value as needed
+    
+          const x = radius * Math.sin(theta) * Math.cos(phi);
+          const y = radius * Math.sin(theta) * Math.sin(phi);
+          const z = radius * Math.cos(theta);
+    
+          // Calculate size based on visual magnitude (vmag)
+          const size = 5 * Math.max(1, 20 - vmag); // Adjust this calculation as needed
+          const scaleFactor = 1; // Adjust this value to change overall star sizes
+    
+          // Create star geometry
+          const geometry = new THREE.SphereGeometry(size * scaleFactor, 18, 10);
+    
+          // Calculate star color based on B-V index
+          const color = bv2rgb(bv);
+    
+          const material = new THREE.ShaderMaterial({
+            uniforms: {
+              baseColor: { type: "c", value: new THREE.Color(color[0], color[1], color[2]) },
+              viewVector: { type: "v3", value: camera.position },
+              starObjPosition: { type: "v3", value: new THREE.Vector3(y, z, x) },
+            },
+            vertexShader: _VS,
+            fragmentShader: _FS,
+            blending: THREE.AdditiveBlending,
+          });
+    
+          const star = new THREE.Mesh(geometry, material);
+          star.position.set(y, z, x);
+          star.name = name;
+          star.userData.originalSize = size * scaleFactor;
+    
+          sky_group.add(star);
+          stars_objs.push(star);
+        }
+    
+        console.log(`Loaded ${stars_objs.length} stars`);
+      } catch (error) {
+        console.error("Error loading stars:", error);
+      }
+    }
+
 
     function load_skysphere() {
         var skygeo = new THREE.SphereGeometry(14000, 96, 48);
