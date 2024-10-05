@@ -2,7 +2,9 @@ import React, { useRef, useEffect, useState } from 'react';
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
 import { FontLoader } from 'three/examples/jsm/loaders/FontLoader';
-
+//import Stars_catalog from './Stars_catalog';
+import Papa from 'papaparse';
+import { useNavigate } from 'react-router-dom';
 //the glsl code for the shaders
 //vertex shader
 var _VS = `
@@ -50,6 +52,64 @@ const StarryNight = () => {
   const [rotSpeed, setRotSpeed] = useState(0.0005);
   const [latitude, setLatitude] = useState(23.5);
   const [hoveredStar, setHoveredStar] = useState(null);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [suggestions, setSuggestions] = useState([]);
+  const navigate = useNavigate();
+
+  // Declare stars_objs and lastHoveredStar
+  let stars_objs = [];
+  let lastHoveredStar = null;
+
+  // Define resizeStar function
+  function resizeStar(star, scale) {
+    const newSize = star.userData.originalSize * scale;
+    star.geometry = new THREE.SphereGeometry(newSize, 18, 10);
+  }
+
+  // Function to update suggestions based on search term
+  const updateSuggestions = (term) => {
+    if (term.length === 0) {
+      setSuggestions([]);
+      return;
+    }
+    const filteredStars = stars_objs
+      .filter(star => star.name.toLowerCase().includes(term.toLowerCase()))
+      .map(star => star.name);
+    console.log('Filtered Stars:', filteredStars); // Debugging log
+    // console the first star in starsobjects
+    //console.log('First Star:', stars_objs[0].name); // Debugging log
+    setSuggestions(filteredStars);
+  };
+
+  // Function to handle search input change
+  const handleSearchChange = (e) => {
+    const term = e.target.value;
+    setSearchTerm(term);
+    console.log('Search Term:', term); // Debugging log
+    updateSuggestions(term);
+  };
+
+  // Function to select a star from suggestions
+  const selectStar = (starName) => {
+    setSearchTerm(starName);
+    setSuggestions([]);
+    searchStar(starName);
+  };
+
+  // Updated searchStar function to accept a star name
+  const searchStar = (starName) => {
+    const star = stars_objs.find(star => star.name.toLowerCase() === starName.toLowerCase());
+    if (star) {
+      if (lastHoveredStar) {
+        resizeStar(lastHoveredStar, 1); // Revert last hovered star to original size
+      }
+      resizeStar(star, 10); // Highlight the found star
+      setHoveredStar(star.name);
+      lastHoveredStar = star;
+    } else {
+      alert('Star not found');
+    }
+  };
 
   const [preRotSpeed, setPreRotSpeed] = useState(rotSpeed);
   const [tempRotSpeed, setTempRotSpeed] = useState(0.0005);
@@ -73,7 +133,6 @@ const StarryNight = () => {
   };
 
   useEffect(() => {
-    let stars_objs = [];
     let sky_group, ground_group, ground_circle, scene, camera, renderer, textue_loader, font_loader;
     let sky_texture, sky_sphere, amb_light, hemi_light, controls;
     let cur_rot_rad = lat2rot(latitude);
@@ -81,7 +140,6 @@ const StarryNight = () => {
     const unit_j = new THREE.Vector3(0, 1, 0);
     let axis_polar = unit_j.clone();
     let raycaster, mouse;
-    let lastHoveredStar = null;
 
     //for rendering the stars 
     function load_stars() {
@@ -185,7 +243,7 @@ const StarryNight = () => {
         var g=0.0;
         var b=0.0; 
         
-        if (bv<-0.4) bv=-0.4; if (bv> 2.0) bv= 2.0;
+        if (bv<-0.4) bv=-0.4; if (bv> 2.0) bv=2.0;
         
             if ((bv>=-0.40)&&(bv<0.00)) { t=(bv+0.40)/(0.00+0.40); r=0.61+(0.11*t)+(0.1*t*t); }
         else if ((bv>= 0.00)&&(bv<0.40)) { t=(bv-0.00)/(0.40-0.00); r=0.83+(0.17*t)          ; }
@@ -294,11 +352,6 @@ const StarryNight = () => {
         );
     }
 
-    function resizeStar(star, scale) {
-        const newSize = star.userData.originalSize * scale;
-        star.geometry = new THREE.SphereGeometry(newSize, 18, 10);
-    }
-
     function checkStarHover() {
         // Update the picking ray with the camera and mouse position
         raycaster.setFromCamera(mouse, camera);
@@ -316,8 +369,8 @@ const StarryNight = () => {
             }
             
             if (lastHoveredStar !== hoveredStarObject) {
-            resizeStar(hoveredStarObject, 10); // Increase size of currently hovered star
-            // console.log(`Hovered star: ${hoveredStarName}`);
+            resizeStar(hoveredStarObject, 6); // Increase size of currently hovered star
+            console.log(`Hovered star: ${hoveredStarName}`);
             }
             
             setHoveredStar(hoveredStarName);
@@ -382,7 +435,7 @@ const StarryNight = () => {
         load_stars();
         load_skysphere();
         scene.add(sky_group);
-        load_ground();
+        // load_ground();
         sky_group.rotateOnWorldAxis(unit_i, cur_rot_rad);
         
         animate();
@@ -396,6 +449,8 @@ const StarryNight = () => {
       camera.aspect = window.innerWidth / window.innerHeight;
       camera.updateProjectionMatrix();
     }
+
+    
 
     indexjs_setup();
     animate();
@@ -467,7 +522,11 @@ const StarryNight = () => {
     return () => {
       window.removeEventListener('mousemove', onMouseMove, false);
       window.removeEventListener('resize', window_resize);
-      mountRef.current.removeChild(renderer.domElement);
+
+      // Check if mountRef.current is not null before removing the child
+      if (mountRef.current && mountRef.current.contains(renderer.domElement)) {
+        mountRef.current.removeChild(renderer.domElement);
+      }
     };
   }, [rotSpeed, latitude]);
 
@@ -483,6 +542,10 @@ const StarryNight = () => {
     const newLatitude = Math.max(-90, Math.min(90, tempLatitude));
     setLatitude(newLatitude);
     setRotSpeed(tempRotSpeed);
+  };
+
+  const navigateToSearchPage = () => {
+    navigate('/search'); // Adjust the path as needed
   };
 
   return (
@@ -532,7 +595,48 @@ const StarryNight = () => {
       >
         {mode === 'on' ? 'On' : 'Off'} 
       </button>
+        <br />
+        <label>
+          Search Star:
+          <input
+            type="text"
+            value={searchTerm}
+            onChange={handleSearchChange}
+            style={{ width: '100px',  borderRadius: '5px', marginLeft: '10px' }}
+          />
+        </label>
+        <button style={{ borderRadius: '5px', marginLeft: '10px' }} onClick={() => searchStar(searchTerm)}>Search</button>
+        <ul style={{ listStyleType: 'none', padding: 0, margin: 0 }}>
+          {suggestions.map((suggestion, index) => (
+            <li
+              key={index}
+              onClick={() => selectStar(suggestion)}
+              style={{ cursor: 'pointer', backgroundColor: 'rgba(255, 255, 255, 0.1)', padding: '5px' }}
+            >
+              {suggestion}
+            </li>
+          ))}
+        </ul>
       </div>
+      <button
+        onClick={navigateToSearchPage}
+        style={{
+          position: 'absolute',
+          top: 10,
+          right: 10,
+          padding: '10px 20px',
+          backgroundColor: 'rgba(0, 0, 0, 0.5)',
+          color: 'white',
+          border: 'none',
+          borderRadius: '5px',
+          cursor: 'pointer',
+          //size of text
+          fontSize: '30px',
+          fontWeight: 'bold',
+        }}
+      >
+        Select Exoplanet
+      </button>
       {hoveredStar && (
         <div style={{
           position: 'absolute',
