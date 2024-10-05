@@ -1,11 +1,13 @@
 from astroquery.gaia import Gaia
 from astropy.coordinates import SkyCoord
 import astropy.units as u
-import numpy as np     
+import numpy as np
+import math
 
 # Data api for accessing gaia data from NASA
 # Api official documentation and examples: https://astroquery.readthedocs.io/en/latest/gaia/gaia.html
 # https://gea.esac.esa.int/archive/documentation/GDR2/Gaia_archive/chap_datamodel/sec_dm_main_tables/ssec_dm_gaia_source.html
+
 
 '''
 Switch to cartesian coordinate system and project to 2D.
@@ -31,27 +33,29 @@ def ra_dec_to_xy(ra_deg, dec_deg):
     
     return x_prime, y_prime
 
-'''
-Switch to cartesian coordinate system and remain in 3D.
-Args:
-    ra_deg: right ascension in degrees
-    dec_deg: declination in degrees
-    dis: distance in parsecs
-Returns:
-    x: x coordinate in 3D
-    y: y coordinate in 3D
-    z: z coordinate in 3D
-'''
+
 def ra_dec_to_xyz(ra_deg, dec_deg, dis):
     ra = np.radians(ra_deg)
     dec = np.radians(dec_deg)
 
     # Convert to 3D Cartesian coordinates
-    x = np.cos(dec) * np.cos(ra)
-    y = np.cos(dec) * np.sin(ra)
-    z = np.sin(dec)
+    x = np.cos(dec) * np.cos(ra) * dis
+    y = np.cos(dec) * np.sin(ra) * dis
+    z = np.sin(dec) * dis
     
     return x, y, z
+
+def xyz_to_ra_dec(x, y, z):
+    r = np.sqrt(x**2 + y**2 + z**2)
+    dec = np.arcsin(z / r)
+    ra = np.arctan2(y, x)
+    
+    # Convert RA and Dec from radians to degrees
+    ra_deg = (np.degrees(ra)) % 360
+    dec_deg = np.degrees(dec)
+    
+    return ra_deg, dec_deg
+    
 
 '''
 Calculate the relative position of the target star from the source star and project to 2D.
@@ -67,6 +71,9 @@ Returns:
     relative_y: relative y coordinate in 2D
 '''
 def get_relative_pos(source_ra, source_dec, source_dis, target_ra, target_dec, target_dis):
+
+    # print("source: ", source_ra, source_dec, source_dis)
+    # print("target: ", target_ra, target_dec, target_dis)
     
     source_x, source_y, source_z = ra_dec_to_xyz(source_ra, source_dec, source_dis)
     target_x, target_y, target_z = ra_dec_to_xyz(target_ra, target_dec, target_dis)
@@ -76,11 +83,7 @@ def get_relative_pos(source_ra, source_dec, source_dis, target_ra, target_dec, t
     relative_x = target_x - source_x
     relative_y = target_y - source_y
 
-    # Stereographic projection to 2D coordinates
-    relative_x = relative_x / (1 - relative_z)
-    relative_y = relative_y / (1 - relative_z)
-
-    return relative_x, relative_y
+    return relative_x, relative_y, relative_z
 
 '''
 Transform the view from the exoplanet to the earth approximation view.
@@ -93,35 +96,32 @@ Returns:
     ret_ra: transformed right ascension in degrees
     ret_dec: transformed declination in degrees
 '''
-def view_transform(ex_ra, ex_dec, ra, dec):
+def view_transform(ex_ra, ex_dec, ra, dec, ex_distance):
     sign_ra, sign_dec = 1, 1
 
-    print("before transform: ", ra, dec)
     # check viewing angle
-    if dec * ex_dec < 0:
-        sign_dec = -1
-    if (ra - 180) * (ex_ra - 180) < 0:
-        sign_ra = -1
+    # print("exoplanet position: ", ex_ra, ex_dec)
+    # print("viewing angle before transform: ", ra, dec)
 
     # change angle range for easy calculation
     if ra > 180:
         ra = 360 - ra
-    dec = 90-dec
+        sign_ra = -1
 
     # start transformation
-    ret_ra, ret_dec = 0, 0
-    if ra < 120:
-        ret_ra = ex_ra + int(ra / 2) * sign_ra
-    else:
-        ret_ra = ex_ra + (2 * ra - 180) * sign_ra
+    ra_dis = math.sqrt(ex_distance**2 + 10000 - 200 * ex_distance * math.cos(math.pi-math.radians(ra)))
+    dec_dis = math.sqrt(ex_distance**2 + 10000 - 200 * ex_distance * math.cos(math.pi-math.radians(dec)))
+    ra_change = math.asin(math.sin(math.pi-math.radians(ra)) / ra_dis * 100)
+    ra_change = math.degrees(ra_change)
+    dec_change = math.asin(math.sin(math.pi-math.radians(dec)) / dec_dis * 100)
+    dec_change = math.degrees(dec_change)
+    ret_ra = ex_ra + ra_change * sign_ra
+    ret_dec = ex_dec + dec_change * sign_dec
 
-    if dec < 120:
-        ret_dec = ex_dec + int(dec / 2) * sign_dec
-    else:
-        ret_dec = ex_dec + (2 * dec - 180) * sign_dec
-
-    print("after transform: ", ret_ra, ret_dec)
+    # print("viewing angle after transform: ", ret_ra, ret_dec)
     return ret_ra, ret_dec
+    
+    
 
 '''
 Return stars' positional information, observed from the earth.
@@ -154,8 +154,7 @@ def get_skyview_from_earth(ra, dec, fovy_w=1, fovy_h=1):
     dec_values = r['dec']
     distance = r['dist']     
     mag_values = r['phot_g_mean_mag']       
-
-    x_vals, y_vals = ra_dec_to_xy(ra_values, dec_values)
+    parallex_values = r['parallax']
 
     # Size proxy (lower magnitude = brighter)
     size_normalized = (np.max(mag_values) - mag_values) / (np.max(mag_values) - np.min(mag_values)) * 20 # Scale to 20
@@ -163,63 +162,77 @@ def get_skyview_from_earth(ra, dec, fovy_w=1, fovy_h=1):
     # only extract useful data
     data_dict = {
         "name": name,
-        "x": x_vals,
-        "y": y_vals,
         "ra": ra_values,
         "dec": dec_values,
         "size": size_normalized,
         "brightness": mag_values,
-        "distance": distance
+        "distance": distance,
+        "parallax": parallex_values
     }
 
     return data_dict
     
+
 '''
 Return stars' positional information, observed from the exoplanet.
 Args:
     ex_ra: exoplanet's right ascension in degrees
     ex_dec: exoplanet's declination in degrees
     ex_distance: exoplanet's distance in parsecs
-    ra: right ascension in degrees
-    dec: declination in degrees
+    ra: observed right ascension in degrees
+    dec: observed declination in degrees
     fovy_w: field of view width in degrees
     fovy_h: field of view height in degrees
 Returns:
     data_dict: dictionary containing stars' positional information
         "name": star names (Gaia designation)
-        "x": x coordinates in 2D
-        "y": y coordinates in 2D
         "ra": right ascension in degrees
         "dec": declination in degrees
         "size": star size
         "brightness": star brightness
         "distance": star distance from the earth
 '''
-def get_skyview_from_exoplanet(ex_ra, ex_dec, ex_distance, ra, dec, fovy_w=1, fovy_h=1):
+def get_skyview_from_exoplanet(ex_ra, ex_dec, ex_distance, ra, dec, fovy_w=30, fovy_h=30, n_stars=150):
     # get view approximation from earth
-    proxy_ra, proxy_dec = view_transform(ex_ra, ex_dec, ra, dec)
-    coord = SkyCoord(ra=proxy_ra, dec=proxy_dec, unit=(u.degree, u.degree), frame='icrs')
-    width = u.Quantity(fovy_w, u.deg)
-    height = u.Quantity(fovy_h, u.deg)
+    proxy_ra, proxy_dec = view_transform(ex_ra, ex_dec, ra, dec, ex_distance)
 
-    # Get the star data from Gaia
-    r = Gaia.query_object_async(coordinate=coord, width=width, height=height)
+    ra_min = proxy_ra - fovy_w / 2
+    ra_max = proxy_ra + fovy_w / 2
+    dec_min = proxy_dec - fovy_h / 2
+    dec_max = proxy_dec + fovy_h / 2
+
+    ra_distance = math.sqrt(ex_distance**2 + 10000 - 2 * ex_distance * math.cos(math.pi-math.radians(ra)))
+    distance_limit = math.sqrt(ra_distance**2 + 10000 - 2 * ra_distance * math.cos(math.pi-math.radians(dec)))
+    parallax_limit = 1000 / distance_limit
+    print("distance limit: ", distance_limit)
+    print("parallax limit: ", parallax_limit)
+
+    # Get the star data from Gaia #TODO: change parallax limit
+    query2 = f"""
+            SELECT 
+            TOP {n_stars}
+            source_id, DESIGNATION, ra, dec, parallax, phot_g_mean_mag
+            FROM gaiadr2.gaia_source
+            WHERE parallax > {parallax_limit}
+            AND ra BETWEEN {ra_min} AND {ra_max}
+            AND dec BETWEEN {dec_min} AND {dec_max}
+            """
+    r = Gaia.launch_job(query2).get_results()
 
     l = len(r[['ra']])
-    x_vals = np.zeros(l)
-    y_vals = np.zeros(l)
-
-    # TODO: transform to exoplanet view
     name = r['DESIGNATION']
     ra_values = r['ra']
     dec_values = r['dec']
-    distance = r['dist']     
+    parallex_values = r['parallax']
+    distance = 1000 / parallex_values    
     mag_values = r['phot_g_mean_mag']  
 
     # calculate relative position of the stars from the exoplanet
     for i in range(l):
-        x_vals[i], y_vals[i] = get_relative_pos(ex_ra, ex_dec, ex_distance, ra_values[i], dec_values[i], distance[i])
-        #x_vals[i], y_vals[i] = ra_dec_to_xy(ra_values[i], dec_values[i])
+        x, y, z = get_relative_pos(ex_ra, ex_dec, ex_distance, ra_values[i], dec_values[i], distance[i])
+        distance[i] = math.sqrt(x**2 + y**2 + z**2)
+        # ra_values[i], dec_values[i] = xyz_to_ra_dec(x, y, z)
+        # print(ra_values[i], dec_values[i], distance[i])
 
     # Size proxy (lower magnitude = brighter)
     size_normalized = (np.max(mag_values) - mag_values) / (np.max(mag_values) - np.min(mag_values)) * 20 # Scale to 20
@@ -227,13 +240,12 @@ def get_skyview_from_exoplanet(ex_ra, ex_dec, ex_distance, ra, dec, fovy_w=1, fo
     # only extract useful data
     data_dict = {
         "name": name,
-        "x": x_vals,
-        "y": y_vals,
         "ra": ra_values,
         "dec": dec_values,
         "size": size_normalized,
         "brightness": mag_values,
-        "distance": distance
+        "distance": distance,
+        "parallax": parallex_values
     }
 
     return data_dict
