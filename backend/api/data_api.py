@@ -29,7 +29,7 @@ Returns:
         "brightness": star brightness
         "distance": star distance from the earth
 '''
-def get_skyview_from_exoplanet(ex_ra, ex_dec, ex_distance, ra, dec, fovy_w=30, fovy_h=30, n_stars=150):
+def get_skyview_from_exoplanet(ex_ra, ex_dec, ex_distance, ra, dec, fovy_w=40, fovy_h=40, n_stars=300):
     # get view approximation from earth
     proxy_ra, proxy_dec = view_transform(ex_ra, ex_dec, ra, dec, ex_distance)
 
@@ -118,7 +118,7 @@ Returns:
         "brightness": star brightness
         "distance": star distance from the earth
 '''
-def get_skyview_from_earth(ra, dec, fovy_w=1, fovy_h=1):
+def get_skyview_from_earth(ra, dec, fovy_w=40, fovy_h=40):
     coord = SkyCoord(ra=ra, dec=dec, unit=(u.degree, u.degree), frame='icrs')
     width = u.Quantity(fovy_w, u.deg)
     height = u.Quantity(fovy_h, u.deg)
@@ -132,19 +132,30 @@ def get_skyview_from_earth(ra, dec, fovy_w=1, fovy_h=1):
     distance = r['dist']     
     mag_values = r['phot_g_mean_mag']       
     parallex_values = r['parallax']
+    bv_colors = []
+    bp_mag = r['phot_bp_mean_mag']
+    rp_mag = r['phot_rp_mean_mag']
+    
+    for i in range(len(name)):
+        bm = bp_mag[i]
+        rm = rp_mag[i]
+        # Calculate an approximate B-V color index
+        bv_color_index = 0.751 * (bm - rm)
+        bv_colors.append(bv_color_index)
 
     # Size proxy (lower magnitude = brighter)
     size_normalized = (np.max(mag_values) - mag_values) / (np.max(mag_values) - np.min(mag_values)) * 20 # Scale to 20
 
     # only extract useful data
     data_dict = {
-        "name": name,
-        "ra": ra_values,
-        "dec": dec_values,
-        "size": size_normalized,
-        "brightness": mag_values,
-        "distance": distance,
-        "parallax": parallex_values
+        "name": name.tolist(),
+        "ra": ra_values.tolist(),
+        "dec": dec_values.tolist(),
+        "size": size_normalized.tolist(),
+        "brightness": mag_values.tolist(),
+        "bv": bv_colors,
+        "distance": distance.tolist(),
+        "parallax": parallex_values.tolist()
     }
 
     return data_dict
