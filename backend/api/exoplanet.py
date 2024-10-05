@@ -41,7 +41,7 @@ async def get_exoplanet_list():
     return JSONResponse(status_code=200, content=response_data)
 
 
-def get_exoplanet_dict() -> None:
+def get_exoplanet_dict():
     """
     Initialize global variable (sample_data, i.e. Exoplanet collection) 
     """

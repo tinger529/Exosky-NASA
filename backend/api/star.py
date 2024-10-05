@@ -10,13 +10,15 @@ from api.data_api import get_skyview_from_exoplanet, get_skyview_from_earth
 
 router = APIRouter()
 
+
 class SkyviewParams(BaseModel):
     ex_ra: Optional[float] = None
     ex_dec: Optional[float] = None
     ex_distance: Optional[float] = None
     ra: float
     dec: float
-    
+
+
 class Star():
     def __init__(self, name: str, ra: float, dec: float, vmag: float, bv: float):
         self.name = name
@@ -24,7 +26,7 @@ class Star():
         self.dec = dec
         self.vmag = vmag
         self.bv = bv
-    
+
     def to_dict(self):
         return {
             "name": self.name,
@@ -33,17 +35,22 @@ class Star():
             "vmag": str(self.vmag),
             "bv": str(self.bv)
         }
-        
-    
-@router.post("/skyview/exoplanet")
+
+
+@router.post("/skyview/exoplanet/")
 async def get_stars_from_exoplanet(params: SkyviewParams):
     """
     Retrieve stars from exoplanet by given params:
     Exoplanet Right Ascension (ex_ra), Exoplanet Declination (ex_dec), Exoplanet Distance (ex_distance), Right Ascension (ra) and Declination (dec).
     """
-    
-    if not params.ex_ra or not params.ex_dec or not params.ex_distance or not params.ra or not params.dec:
+
+    print(params)
+
+    if (params.ex_ra is None or params.ex_dec is None or 
+        params.ex_distance is None or params.ex_distance < 0 or
+        params.ra is None or params.dec is None):
         raise HTTPException(status_code=400, detail="Invalid parameters")
+
     
     skyview = get_skyview_from_exoplanet(
         params.ex_ra,
@@ -71,7 +78,7 @@ async def get_stars_from_earth(params: SkyviewParams):
     """
     Retrieve stars from earth by given Right Ascension (ra) and Declination (dec).
     """
-    if params.ex_ra or params.ex_dec or params.ex_distance:
+    if (params.ex_ra or params.ex_dec or params.ex_distance):
         raise HTTPException(status_code=400, detail="Invalid parameters")
     
     ra = params.ra
