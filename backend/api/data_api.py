@@ -65,6 +65,8 @@ def get_skyview_from_exoplanet(ex_ra, ex_dec, ex_distance, ra, dec, fovy_w=40, f
     distance = 1000 / parallex_values    
     mag_values = r['phot_g_mean_mag']  
     bv_colors = []
+    ra_mean = np.mean(ra_values)
+    dec_mean = np.mean(dec_values)
     bp_mag = r['phot_bp_mean_mag']
     rp_mag = r['phot_rp_mean_mag']
     
@@ -73,6 +75,8 @@ def get_skyview_from_exoplanet(ex_ra, ex_dec, ex_distance, ra, dec, fovy_w=40, f
     for i in range(l):
         x, y, z = get_relative_pos(ex_ra, ex_dec, ex_distance, ra_values[i], dec_values[i], distance[i])
         distance[i] = math.sqrt(x**2 + y**2 + z**2)
+        ra_values[i] = ra + ra_values[i] - ra_mean
+        dec_values[i] = dec + dec_values[i] - dec_mean
         # ra_values[i], dec_values[i] = xyz_to_ra_dec(x, y, z)
         # print(ra_values[i], dec_values[i], distance[i])
         
