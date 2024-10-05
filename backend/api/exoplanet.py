@@ -22,7 +22,7 @@ async def get_exoplanet_list():
         "pl_name": list(sample_data.keys())
     }
 
-@router.get("/{pl_name}")
+@router.post("/{pl_name}")
 async def get_exoplanet(pl_name: str):
     """
     Retrieve exoplanet information based on the pl_name.
@@ -60,9 +60,6 @@ def get_exoplanet_dict():
     # frame_data = pd.DataFrame(sample_data)
                 
     return sample_data
-
-if __name__ == "__init__":
-    get_exoplanet_dict()
 
 
 """
