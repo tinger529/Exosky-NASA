@@ -54,6 +54,8 @@ const StarryNight = () => {
   const [hoveredStar, setHoveredStar] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [suggestions, setSuggestions] = useState([]);
+  const [wrenderer, setWRenderer] = useState(null);
+
   const navigate = useNavigate();
 
   // Declare stars_objs and lastHoveredStar
@@ -409,7 +411,7 @@ const StarryNight = () => {
         textue_loader = new THREE.TextureLoader();
         font_loader = new FontLoader();
         
-        renderer = new THREE.WebGLRenderer({"antialias": true});
+        renderer = new THREE.WebGLRenderer({"antialias": true, preserveDrawingBuffer: true, alpha: false});
         renderer.setSize(window.innerWidth, window.innerHeight);
         renderer.shadowMap.enabled = true;
         mountRef.current.appendChild(renderer.domElement);
@@ -518,7 +520,7 @@ const StarryNight = () => {
     
     // 将鼠标点击事件绑定到窗口
     window.addEventListener('click', onMouseClick);
-    
+    setWRenderer(renderer);
     return () => {
       window.removeEventListener('mousemove', onMouseMove, false);
       window.removeEventListener('resize', window_resize);
@@ -546,6 +548,17 @@ const StarryNight = () => {
 
   const navigateToSearchPage = () => {
     navigate('/search'); // Adjust the path as needed
+  };
+
+  const exportAsImage = (format = 'image/png') => {
+    if (!wrenderer) return;
+    // 使用 toDataURL 方法将场景内容转换为 base64 图片
+    const imgData = wrenderer.domElement.toDataURL(format);
+    // 创建一个临时链接，用于下载图片
+    const link = document.createElement('a');
+    link.href = imgData;
+    link.download = format === 'image/jpeg' ? 'scene.jpeg' : 'scene.png';
+    link.click();
   };
 
   return (
@@ -582,7 +595,7 @@ const StarryNight = () => {
         onClick={applySettings}>Set Latitude & Speed</button>
         <br />
         <label>
-        Constellation mode:
+        Constellation Mode:
         </label>
       <button
         onClick={toggleMode}
@@ -594,6 +607,32 @@ const StarryNight = () => {
         }}
       >
         {mode === 'on' ? 'On' : 'Off'} 
+      </button>
+      <br />
+        <label>
+        Export Screen:
+        </label>
+      <button
+        onClick={() => exportAsImage('image/png')}
+        style={{
+          marginLeft: '10px',
+          cursor: 'pointer',
+          borderRadius: '5px',
+          border: 'none',
+        }}
+      >
+        Export PNG 
+      </button>
+      <button
+        onClick={() => exportAsImage('image/jpeg')}
+        style={{
+          marginLeft: '10px',
+          cursor: 'pointer',
+          borderRadius: '5px',
+          border: 'none',
+        }}
+      >
+        Export JPEG 
       </button>
         <br />
         <label>
