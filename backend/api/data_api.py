@@ -29,7 +29,7 @@ Returns:
         "brightness": star brightness
         "distance": star distance from the earth
 '''
-def get_skyview_from_exoplanet(ex_ra, ex_dec, ex_distance, ra, dec, fovy_w=40, fovy_h=40, n_stars=300):
+def get_skyview_from_exoplanet(ex_ra, ex_dec, ex_distance, ra, dec, fovy_w=400, fovy_h=400, n_stars=3000):
     # get view approximation from earth
     proxy_ra, proxy_dec = view_transform(ex_ra, ex_dec, ra, dec, ex_distance)
 
