@@ -53,7 +53,7 @@ const StarryNight = () => {
 
   const [tempRotSpeed, setTempRotSpeed] = useState(0.0005);
   const [tempLatitude, setTempLatitude] = useState(23.5);
-
+  
   useEffect(() => {
     let stars_objs = [];
     let sky_group, ground_group, ground_circle, scene, camera, renderer, textue_loader, font_loader;
@@ -64,8 +64,6 @@ const StarryNight = () => {
     let axis_polar = unit_j.clone();
     let raycaster, mouse;
     let lastHoveredStar = null;
-
-    // Helper functions (bv2rgb, lat2rot) go here...
 
     //for rendering the stars 
     function load_stars() {
@@ -293,7 +291,7 @@ const StarryNight = () => {
         if (intersects.length > 0) {
             const hoveredStarObject = intersects[0].object;
             const hoveredStarName = hoveredStarObject.name;
-            console.log(`Hovered star: ${hoveredStarName}`); // Debugging log
+            // console.log(`Hovered star: ${hoveredStarName}`); // Debugging log
         
             if (lastHoveredStar && lastHoveredStar !== hoveredStarObject) {
             resizeStar(lastHoveredStar, 1); // Revert last hovered star to original size
@@ -301,7 +299,7 @@ const StarryNight = () => {
             
             if (lastHoveredStar !== hoveredStarObject) {
             resizeStar(hoveredStarObject, 10); // Increase size of currently hovered star
-            console.log(`Hovered star: ${hoveredStarName}`);
+            // console.log(`Hovered star: ${hoveredStarName}`);
             }
             
             setHoveredStar(hoveredStarName);
@@ -385,7 +383,68 @@ const StarryNight = () => {
     animate();
 
     window.addEventListener('resize', window_resize);
+    const lineMaterial = new THREE.LineBasicMaterial({
+        color: 0x5EF6FF,  // 设置线条颜色为红色
+        linewidth: 2,     // 线条宽度
+    });
+  
+    let selectedStars = [];  // 存储用户点击的星星
+    let lines = [];          // 存储已经绘制的线条
+    
+    function onMouseClick(event) {
+        // 将鼠标位置转换为标准化设备坐标 (NDC)
+        mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+        mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+    
+        // 设置 raycaster，从相机通过鼠标位置发出
+        raycaster.setFromCamera(mouse, camera);
+    
+        // 检测光线与场景中所有星星的相交
+        const intersects = raycaster.intersectObjects(stars_objs);
+    
+        if (intersects.length > 0) {
+            const selectedStar = intersects[0].object;  // 获取第一个相交的星星
+            console.log("Selected star:", selectedStars);
+    
+            // 将选中的星星存储在 selectedStars 数组中
+            selectedStars.push(selectedStar);
+            if (selectedStars.length === 2) {
+              const startPosition = selectedStars[0].position;
+              const endPosition = selectedStars[1].position;
+   
+              const existingLineIndex = lines.findIndex(line =>
+                (line.start === startPosition && line.end === endPosition) ||
+                (line.start === endPosition && line.end === startPosition)
+            );
 
+              if (existingLineIndex !== -1) {
+                // 如果线条存在，移除它并从 lines 数组中删除
+                const existingLine = lines[existingLineIndex].line;
+                sky_group.remove(existingLine);  // 从场景中移除
+                lines.splice(existingLineIndex, 1);  // 从数组中删除
+            } else {
+                const points = [startPosition, endPosition];
+                const geometry = new THREE.BufferGeometry().setFromPoints(points);
+  
+                // 使用已有的线条材质绘制线
+                const line = new THREE.Line(geometry, lineMaterial);
+                sky_group.add(line);
+                
+                // 将新线条的起点、终点和线条对象存储起来
+                lines.push({
+                    start: startPosition,
+                    end: endPosition,
+                    line: line
+                });
+            }
+            selectedStars = [];
+            }
+        }
+    }
+    
+    // 将鼠标点击事件绑定到窗口
+    window.addEventListener('click', onMouseClick);
+    
     return () => {
       window.removeEventListener('mousemove', onMouseMove, false);
       window.removeEventListener('resize', window_resize);
