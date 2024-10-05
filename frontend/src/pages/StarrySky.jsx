@@ -51,9 +51,27 @@ const StarryNight = () => {
   const [latitude, setLatitude] = useState(23.5);
   const [hoveredStar, setHoveredStar] = useState(null);
 
+  const [preRotSpeed, setPreRotSpeed] = useState(rotSpeed);
   const [tempRotSpeed, setTempRotSpeed] = useState(0.0005);
   const [tempLatitude, setTempLatitude] = useState(23.5);
   
+  const [mode, setMode] = useState('off');
+
+  const toggleMode = () => {
+    if(mode === 'on'){  //  代表要關掉了
+      const userConfirmed = window.confirm('Your constellation will disappear! Do you want to proceed?');
+      if (userConfirmed) {
+        setMode((prevMode) => (prevMode === 'on' ? 'off' : 'on'));
+        setRotSpeed(preRotSpeed)
+      } 
+    }else{
+      setPreRotSpeed(rotSpeed) 
+      setRotSpeed(0)
+     setMode((prevMode) => (prevMode === 'on' ? 'off' : 'on'));
+    }
+    
+  };
+
   useEffect(() => {
     let stars_objs = [];
     let sky_group, ground_group, ground_circle, scene, camera, renderer, textue_loader, font_loader;
@@ -392,6 +410,7 @@ const StarryNight = () => {
     let lines = [];          // 存储已经绘制的线条
     
     function onMouseClick(event) {
+        if(mode == 'off') return
         // 将鼠标位置转换为标准化设备坐标 (NDC)
         mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
         mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
@@ -487,10 +506,32 @@ const StarryNight = () => {
             type="number"
             value={tempLatitude}
             onChange={handleLatitudeChange}
-            style={{ width: '60px' }}
+            style={{ width: '60px', borderRadius: '5px', marginLeft: '10px'}}
           />
         </label>
-        <button onClick={applySettings}>Set Latitude & Speed</button>
+        <button        
+          style={{
+            marginLeft: '10px',
+            cursor: 'pointer',
+            borderRadius: '5px',
+            border: 'none',
+          }}
+        onClick={applySettings}>Set Latitude & Speed</button>
+        <br />
+        <label>
+        Constellation mode:
+        </label>
+      <button
+        onClick={toggleMode}
+        style={{
+          marginLeft: '10px',
+          cursor: 'pointer',
+          borderRadius: '5px',
+          border: 'none',
+        }}
+      >
+        {mode === 'on' ? 'On' : 'Off'} 
+      </button>
       </div>
       {hoveredStar && (
         <div style={{
