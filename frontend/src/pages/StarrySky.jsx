@@ -965,7 +965,7 @@ const StarryNight = () => {
         <div
           style={{
             position: 'absolute',
-            bottom: 10,
+            bottom: 30,
             left: 10,
             color: 'white',
             backgroundColor: 'rgba(0,0,0,0.5)',
