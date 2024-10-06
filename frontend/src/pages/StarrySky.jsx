@@ -180,7 +180,7 @@ const StarryNight = () => {
 
       try {
         const response = await fetch(
-          'http://3.81.103.30/api/v1/star/skyview/exoplanet',
+          'http://localhost:8000/api/v1/star/skyview/exoplanet',
           {
             method: 'POST',
             headers: {
@@ -202,7 +202,7 @@ const StarryNight = () => {
         }
 
         const response2 = await fetch(
-          'http://3.81.103.30/api/v1/star/skyview/exoplanet',
+          'http://localhost:8000/api/v1/star/skyview/exoplanet',
           {
             method: 'POST',
             headers: {
