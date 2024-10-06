@@ -109,7 +109,11 @@ const StarryNight = () => {
         resizeStar(lastHoveredStar, 1); // Revert last hovered star to original size
       }
       resizeStar(star, 10); // Highlight the found star
-      setHoveredStar(star.name);
+      setHoveredStar({
+        "name": star.name,
+        "ra": star.ra,
+        "dec": star.dec
+      });
       lastHoveredStar = star;
     } else {
       alert('Star not found');
@@ -271,6 +275,8 @@ const starData = oriStarData
             const star = new THREE.Mesh(geometry, material);
             star.position.set(y, z, x);
             star.name = name;
+            star.ra = ra;
+            star.dec = dec;
             star.userData.originalSize = size * scaleFactor;
   
             sky_group.add(star);
@@ -482,8 +488,12 @@ const starData = oriStarData
           resizeStar(hoveredStarObject, 6); // Increase size of currently hovered star
           console.log(`Hovered star: ${hoveredStarName}`);
         }
-
-        setHoveredStar(hoveredStarName);
+        console.log(hoveredStarObject)
+        setHoveredStar({
+          "name": hoveredStarObject.name,
+          "ra": hoveredStarObject.ra,
+          "dec": hoveredStarObject.dec
+        });
         lastHoveredStar = hoveredStarObject;
       } else {
         if (lastHoveredStar) {
@@ -812,7 +822,10 @@ const starData = oriStarData
             borderRadius: '5px',
           }}
         >
-          Star: {hoveredStar}
+          Star Info <br/>
+          name: {hoveredStar.name} <br/>
+          ra:  {hoveredStar.ra}<br/>
+          dec: {hoveredStar.dec}
         </div>
       )}
     </div>
