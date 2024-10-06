@@ -853,20 +853,10 @@ const StarryNight = () => {
             min="0"
             max="100"
             value={tempRotSpeed * 10000}
-            onChange={handleRotSpeedChange}
+            onChange={(e) => setTempRotSpeed(e.target.value/10000)}
+            onMouseUp={handleRotSpeedChange}
           />
         </label>
-        <button
-          style={{
-            marginLeft: '10px',
-            cursor: 'pointer',
-            borderRadius: '5px',
-            border: 'none',
-          }}
-          onClick={applySettings}
-        >
-          Set Speed
-        </button>
         <br />
         <label>Constellation Mode:</label>
         <button
