@@ -10,18 +10,22 @@ exoplanet_list = []
 router = APIRouter()
 
 class Exoplanet:
-    def __init__(self, pl_name, hostname, pl_orbper, sy_dist) -> None:
+    def __init__(self, pl_name, hostname, pl_orbper, sy_dist, ra, dec):
         self.pl_name = pl_name
         self.hostname = hostname
         self.pl_orbper = pl_orbper
         self.sy_dist = sy_dist
+        self.ra = ra
+        self.dec = dec
         
     def to_dict(self):
         return {
             "pl_name": self.pl_name,
             "hostname": self.hostname,
             "pl_orbper": self.pl_orbper,
-            "sy_dist": self.sy_dist
+            "sy_dist": self.sy_dist,
+            "ra": self.ra,
+            "dec": self.dec
         }
 
 @router.get("/all")
@@ -58,7 +62,7 @@ def get_exoplanet_dict():
             # Skip columns comment and first row (title)
             if not row[0].startswith('#') and row[0] != "pl_name":
                 exoplanet_list.append(Exoplanet(
-                    row[0], row[1], row[2], row[14],
+                    row[0], row[1], row[2], row[14], row[11], row[13]
                 ))
                 
 """

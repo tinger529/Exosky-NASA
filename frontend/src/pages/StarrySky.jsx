@@ -138,7 +138,19 @@ const StarryNight = () => {
     }
   };
 
+  const [exRa, setExRa] = useState(69.3405531); // Default value
+  const [exDec, setExDec] = useState(26.8502997); // Default value
+  const [exDistance, setExDistance] = useState(101); // Default value
+
   useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const ex_ra = params.get('ex_ra');
+    const ex_dec = params.get('ex_dec');
+    const ex_distance = params.get('ex_distance');
+
+    if (ex_ra) setExRa(parseFloat(ex_ra));
+    if (ex_dec) setExDec(parseFloat(ex_dec));
+    if (ex_distance) setExDistance(parseFloat(ex_distance));
     let sky_group,
       ground_group,
       ground_circle,
@@ -157,9 +169,9 @@ const StarryNight = () => {
     //for rendering the stars
     async function load_stars() {
       // Example values for testing
-      const ex_ra = 0; // Right ascension of exoplanet
-      const ex_dec = 0; // Declination of exoplanet
-      const ex_distance = 10; // Distance of exoplanet in parsecs
+      // const ex_ra = 69.3405531; // Right ascension of exoplanet
+      // const ex_dec = 26.8502997; // Declination of exoplanet
+      // const ex_distance = 128.4840000; // Distance of exoplanet in parsecs
       const ra = 0; // Observed right ascension
       const dec = 0; // Observed declination
 
@@ -173,9 +185,9 @@ const StarryNight = () => {
               'Content-Type': 'application/json',
             },
             body: JSON.stringify({
-              ex_ra: ex_ra,
-              ex_dec: ex_dec,
-              ex_distance: ex_distance,
+              ex_ra: exRa,
+              ex_dec: exDec,
+              ex_distance: exDistance,
               ra: ra,
               dec: dec,
             }),
@@ -195,9 +207,9 @@ const StarryNight = () => {
               'Content-Type': 'application/json',
             },
             body: JSON.stringify({
-              ex_ra: ex_ra,
-              ex_dec: ex_dec,
-              ex_distance: ex_distance,
+              ex_ra: exRa,
+              ex_dec: exDec,
+              ex_distance: exDistance,
               ra: ra + 180,
               dec: dec,
             }),
@@ -638,7 +650,7 @@ const StarryNight = () => {
         mountRef.current.removeChild(renderer.domElement);
       }
     };
-  }, [rotSpeed, latitude]);
+  }, [rotSpeed, latitude , exRa, exDec, exDistance]);
 
   const handleRotSpeedChange = (event) => {
     setTempRotSpeed(parseFloat(event.target.value) / 10000);

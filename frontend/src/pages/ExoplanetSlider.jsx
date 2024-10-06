@@ -152,7 +152,12 @@ const ExoplanetDisc = () => {
 
   const handleSelectButtonClick = () => {
     setSelectedPlanet(frontPlanet);
-    navigate('/main'); // Navigate to the main page
+    if (frontPlanet) {
+      const ex_ra = frontPlanet.ra;
+      const ex_dec = frontPlanet.dec;
+      const ex_distance = frontPlanet.sy_dist;
+      navigate(`/main?ra=${ex_ra}&dec=${ex_dec}&distance=${ex_distance}`);
+    }
   };
 
   return (
