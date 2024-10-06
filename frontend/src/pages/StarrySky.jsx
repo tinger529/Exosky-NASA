@@ -55,6 +55,7 @@ const StarryNight = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [suggestions, setSuggestions] = useState([]);
   const [wrenderer, setWRenderer] = useState(null);
+  const [oriStarData, setOriStarDatar] = useState([]);
 
   const navigate = useNavigate();
 
@@ -137,25 +138,8 @@ const StarryNight = () => {
       setMode((prevMode) => (prevMode === 'on' ? 'off' : 'on'));
     }
   };
-
   useEffect(() => {
-    let sky_group,
-      ground_group,
-      ground_circle,
-      scene,
-      camera,
-      renderer,
-      textue_loader,
-      font_loader;
-    let sky_texture, sky_sphere, amb_light, hemi_light, controls;
-    let cur_rot_rad = lat2rot(latitude);
-    const unit_i = new THREE.Vector3(1, 0, 0);
-    const unit_j = new THREE.Vector3(0, 1, 0);
-    let axis_polar = unit_j.clone();
-    let raycaster, mouse;
-
-    //for rendering the stars
-    async function load_stars() {
+    async function fetch_stars_from_backend(){
       // Example values for testing
       const ex_ra = 0; // Right ascension of exoplanet
       const ex_dec = 0; // Declination of exoplanet
@@ -214,7 +198,33 @@ const StarryNight = () => {
         const starData2 = await response2.json();
         // All stars
         const starData = [...starData1.stars, ...starData2.stars];
+        setOriStarDatar(starData)
+      }catch (error) {
+        console.error('Error loading stars:', error);
+      }
+    }
+    fetch_stars_from_backend()
+  }, [])
 
+  useEffect(() => {
+    let sky_group,
+      ground_group,
+      ground_circle,
+      scene,
+      camera,
+      renderer,
+      textue_loader,
+      font_loader;
+    let sky_texture, sky_sphere, amb_light, hemi_light, controls;
+    let cur_rot_rad = lat2rot(latitude);
+    const unit_i = new THREE.Vector3(1, 0, 0);
+    const unit_j = new THREE.Vector3(0, 1, 0);
+    let axis_polar = unit_j.clone();
+    let raycaster, mouse;
+
+    //for rendering the stars
+    async function load_stars() {
+const starData = oriStarData
         starData.forEach(s => {
             const name = s.name;
             const ra = parseFloat(s.ra);
@@ -268,9 +278,7 @@ const StarryNight = () => {
         })
 
         console.log(`Loaded ${stars_objs.length} stars`);
-      } catch (error) {
-        console.error('Error loading stars:', error);
-      }
+      
     }
 
     function load_skysphere() {
@@ -638,7 +646,7 @@ const StarryNight = () => {
         mountRef.current.removeChild(renderer.domElement);
       }
     };
-  }, [rotSpeed, latitude]);
+  }, [rotSpeed, latitude, oriStarData]);
 
   const handleRotSpeedChange = (event) => {
     setTempRotSpeed(parseFloat(event.target.value) / 10000);
