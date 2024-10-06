@@ -157,16 +157,19 @@ const StarryNight = () => {
   const [exRa, setExRa] = useState(69.3405531); // Default value
   const [exDec, setExDec] = useState(26.8502997); // Default value
   const [exDistance, setExDistance] = useState(101); // Default value
+  const [exName, setExName] = useState('Earth'); // Default value
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const ex_ra = params.get('ex_ra');
     const ex_dec = params.get('ex_dec');
     const ex_distance = params.get('ex_distance');
+    const ex_name = params.get('ex_name');
 
     if (ex_ra) setExRa(parseFloat(ex_ra));
     if (ex_dec) setExDec(parseFloat(ex_dec));
     if (ex_distance) setExDistance(parseFloat(ex_distance));
+    if (ex_name) setExName(ex_name);
     async function fetch_stars_from_backend(){
       // Example values for testing
       // const ex_ra = 69.3405531; // Right ascension of exoplanet
@@ -987,6 +990,17 @@ const StarryNight = () => {
         borderRadius: '5px',
       }}>
         RA: {currentCoordinates.ra}h, Dec: {currentCoordinates.dec}°
+      </div>
+      <div style={{
+        position: 'absolute',
+        bottom: 10,
+        left: 10,
+        color: 'white',
+        backgroundColor: 'rgba(0,0,0,0.5)',
+        padding: '5px 10px',
+        borderRadius: '5px',
+      }}>
+        Current Planet: {exName}
       </div>
     </div>
   );

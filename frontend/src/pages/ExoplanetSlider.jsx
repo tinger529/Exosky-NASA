@@ -156,7 +156,8 @@ const ExoplanetDisc = () => {
       const ex_ra = frontPlanet.ra;
       const ex_dec = frontPlanet.dec;
       const ex_distance = frontPlanet.sy_dist;
-      navigate(`/main?ex_ra=${ex_ra}&ex_dec=${ex_dec}&ex_distance=${ex_distance}`);
+      const ex_name = frontPlanet.pl_name;
+      navigate(`/main?ex_ra=${ex_ra}&ex_dec=${ex_dec}&ex_distance=${ex_distance}&ex_name=${ex_name}`);
     }
   };
 
