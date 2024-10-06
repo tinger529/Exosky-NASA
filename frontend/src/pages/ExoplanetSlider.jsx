@@ -29,6 +29,9 @@ const ExoplanetDisc = () => {
     };
 
     fetchExoplanets();
+  }, []);
+
+  useEffect(() => {
     const scene = new THREE.Scene();
     const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
     const renderer = new THREE.WebGLRenderer({ antialias: true });
@@ -142,7 +145,7 @@ const ExoplanetDisc = () => {
         mountRef.current.removeChild(renderer.domElement);
       }
     };
-  }, [rotation, isDragging, startX]);
+  }, [rotation, isDragging, startX, exoplanets]);
 
   const frontIndex = exoplanets.length > 0 ? Math.abs(Math.round((rotation / (Math.PI * 2)) * exoplanets.length) % exoplanets.length) : 0;
   const frontPlanet = exoplanets[frontIndex];
