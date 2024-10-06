@@ -8,14 +8,6 @@ Our project website is available at: https://nasa-exosky.vercel.app
 
 Our project aims to simulate a sky view from any exoplanet in the NASA database. We provide an exquisitely designed user interface, allowing users to change their viewing angle, enjoy a photo-realistic sky map, and create their constellations by joining some pairs of stars. We use Gaia earth-centric databases to approximate the viewing angle and the visible star field of the selected exoplanet and utilize advanced coordination transformation to calculate the stars’ position.
 
-## 📋 Table of Contents
-
-1. [Installation](#installation)
-2. [Usage](#usage)
-3. [Contributing](#contributing)
-4. [License](#license)
-5. [Contact](#contact)
-
 ## 🛠️ Technologies Used
 
 - **Language:** JavaScript, Python
