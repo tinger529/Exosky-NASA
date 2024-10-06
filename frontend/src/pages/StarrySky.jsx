@@ -228,7 +228,8 @@ const StarryNight = () => {
 
     //for rendering the stars
     async function load_stars() {
-const starData = oriStarData
+        const starData = oriStarData
+        stars_objs = []
         starData.forEach(s => {
             const name = s.name;
             const ra = parseFloat(s.ra);
@@ -761,21 +762,6 @@ const starData = oriStarData
           Export JPEG
         </button>
         <br />
-        <label>
-          Search Star:
-          <input
-            type="text"
-            value={searchTerm}
-            onChange={handleSearchChange}
-            style={{ width: '100px', borderRadius: '5px', marginLeft: '10px' }}
-          />
-        </label>
-        <button
-          style={{ borderRadius: '5px', marginLeft: '10px' }}
-          onClick={() => searchStar(searchTerm)}
-        >
-          Search
-        </button>
         <ul style={{ listStyleType: 'none', padding: 0, margin: 0 }}>
           {suggestions.map((suggestion, index) => (
             <li
