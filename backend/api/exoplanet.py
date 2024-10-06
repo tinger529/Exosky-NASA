@@ -36,9 +36,9 @@ async def get_exoplanet_list():
         get_exoplanet_dict()
         
     exoplanet_dict = [exoplanet.to_dict() for exoplanet in exoplanet_list]
-    response_data = json.dumps({"exoplanets": exoplanet_dict})
+    #response_data = json.dumps({"exoplanets": exoplanet_dict})
                     
-    return JSONResponse(status_code=200, content=response_data)
+    return JSONResponse(status_code=200, content=exoplanet_dict)
 
 
 def get_exoplanet_dict():

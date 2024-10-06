@@ -1,9 +1,7 @@
-// frontend/src/pages/ExoplanetDisc.jsx
 import React, { useEffect, useRef, useState } from 'react';
 import * as THREE from 'three';
-import exoplanets from './Exoplanet'; // Adjust the path as necessary
 import Snowflakes from '../components/SnowFlakes';
-import { useNavigate } from 'react-router-dom'; // Import useNavigate
+import { useNavigate } from 'react-router-dom';
 
 const ExoplanetDisc = () => {
   const mountRef = useRef(null);
@@ -11,9 +9,26 @@ const ExoplanetDisc = () => {
   const [isDragging, setIsDragging] = useState(false);
   const [startX, setStartX] = useState(0);
   const [selectedPlanet, setSelectedPlanet] = useState(null);
-  const navigate = useNavigate(); // Initialize navigate
+  const [exoplanets, setExoplanets] = useState([]); // Initialize as an empty array
+  const navigate = useNavigate();
 
   useEffect(() => {
+    // Fetch exoplanet data from the backend
+    const fetchExoplanets = async () => {
+      try {
+        const response = await fetch('http://localhost:8000/api/v1/exoplanet/all'); // Ensure this URL is correct
+        if (!response.ok) {
+          throw new Error(`Network response was not ok: ${response.statusText}`);
+        }
+        const data = await response.json();
+        console.log('Fetched data:', data); // Log the fetched data
+        setExoplanets(data); // Set the state directly with the array
+      } catch (error) {
+        console.error('Error fetching exoplanets:', error.message);
+      }
+    };
+
+    fetchExoplanets();
     const scene = new THREE.Scene();
     const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
     const renderer = new THREE.WebGLRenderer({ antialias: true });
@@ -129,7 +144,7 @@ const ExoplanetDisc = () => {
     };
   }, [rotation, isDragging, startX]);
 
-  const frontIndex = Math.round((rotation / (Math.PI * 2)) * exoplanets.length) % exoplanets.length;
+  const frontIndex = exoplanets.length > 0 ? Math.abs(Math.round((rotation / (Math.PI * 2)) * exoplanets.length) % exoplanets.length) : 0;
   const frontPlanet = exoplanets[frontIndex];
 
   const handleSelectButtonClick = () => {
@@ -155,9 +170,8 @@ const ExoplanetDisc = () => {
         }}>
           <h2>{frontPlanet.pl_name}</h2>
           <p><strong>Host Name:</strong> {frontPlanet.hostname}</p>
-          <p><strong>Orbital Period:</strong> {frontPlanet.pl_orbper} days</p>
-          <p><strong>Planet Radius:</strong> {frontPlanet.pl_rade} Earth radii</p>
-          <p><strong>Distance:</strong> {frontPlanet.sy_dist} pc</p>
+          <p><strong>Orbital Period:</strong> {frontPlanet.pl_orbper ? `${frontPlanet.pl_orbper} days` : 'N/A'}</p>
+          <p><strong>Distance:</strong> {frontPlanet.sy_dist ? `${frontPlanet.sy_dist} pc` : 'N/A'}</p>
           <button onClick={handleSelectButtonClick} style={{ marginTop: '10px', padding: '5px 10px' }}>
             Select
           </button>
