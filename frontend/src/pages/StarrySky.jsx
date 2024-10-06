@@ -56,6 +56,7 @@ const StarryNight = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [suggestions, setSuggestions] = useState([]);
   const [wrenderer, setWRenderer] = useState(null);
+  const [oriStarData, setOriStarDatar] = useState([]);
   const [currentCoordinates, setCurrentCoordinates] = useState({ ra: 0, dec: 0 });
   const [showCoordinates, setShowCoordinates] = useState(true);
   const coordinateGroupRef = useRef(null);
@@ -112,7 +113,11 @@ const StarryNight = () => {
         resizeStar(lastHoveredStar, 1); // Revert last hovered star to original size
       }
       resizeStar(star, 10); // Highlight the found star
-      setHoveredStar(star.name);
+      setHoveredStar({
+        "name": star.name,
+        "ra": star.ra,
+        "dec": star.dec
+      });
       lastHoveredStar = star;
     } else {
       alert('Star not found');
@@ -148,25 +153,8 @@ const StarryNight = () => {
       setMode((prevMode) => (prevMode === 'on' ? 'off' : 'on'));
     }
   };
-
   useEffect(() => {
-    let sky_group,
-      ground_group,
-      ground_circle,
-      scene,
-      camera,
-      renderer,
-      textue_loader,
-      font_loader;
-    let sky_texture, sky_sphere, amb_light, hemi_light, controls;
-    let cur_rot_rad = lat2rot(latitude);
-    const unit_i = new THREE.Vector3(1, 0, 0);
-    const unit_j = new THREE.Vector3(0, 1, 0);
-    let axis_polar = unit_j.clone();
-    let raycaster, mouse;
-
-    //for rendering the stars
-    async function load_stars() {
+    async function fetch_stars_from_backend(){
       // Example values for testing
       const ex_ra = 0; // Right ascension of exoplanet
       const ex_dec = 0; // Declination of exoplanet
@@ -225,7 +213,34 @@ const StarryNight = () => {
         const starData2 = await response2.json();
         // All stars
         const starData = [...starData1.stars, ...starData2.stars];
+        setOriStarDatar(starData)
+      }catch (error) {
+        console.error('Error loading stars:', error);
+      }
+    }
+    fetch_stars_from_backend()
+  }, [])
 
+  useEffect(() => {
+    let sky_group,
+      ground_group,
+      ground_circle,
+      scene,
+      camera,
+      renderer,
+      textue_loader,
+      font_loader;
+    let sky_texture, sky_sphere, amb_light, hemi_light, controls;
+    let cur_rot_rad = lat2rot(latitude);
+    const unit_i = new THREE.Vector3(1, 0, 0);
+    const unit_j = new THREE.Vector3(0, 1, 0);
+    let axis_polar = unit_j.clone();
+    let raycaster, mouse;
+
+    //for rendering the stars
+    async function load_stars() {
+        const starData = oriStarData
+        stars_objs = []
         starData.forEach(s => {
             const name = s.name;
             const ra = parseFloat(s.ra);
@@ -272,6 +287,8 @@ const StarryNight = () => {
             const star = new THREE.Mesh(geometry, material);
             star.position.set(y, z, x);
             star.name = name;
+            star.ra = ra;
+            star.dec = dec;
             star.userData.originalSize = size * scaleFactor;
             star.userData.ra = ra;
             star.userData.dec = dec;
@@ -281,9 +298,7 @@ const StarryNight = () => {
         })
 
         console.log(`Loaded ${stars_objs.length} stars`);
-      } catch (error) {
-        console.error('Error loading stars:', error);
-      }
+      
     }
 
     function load_skysphere() {
@@ -487,8 +502,12 @@ const StarryNight = () => {
           resizeStar(hoveredStarObject, 6); // Increase size of currently hovered star
           console.log(`Hovered star: ${hoveredStarName}`);
         }
-
-        setHoveredStar(hoveredStarName);
+        console.log(hoveredStarObject)
+        setHoveredStar({
+          "name": hoveredStarObject.name,
+          "ra": hoveredStarObject.ra,
+          "dec": hoveredStarObject.dec
+        });
         lastHoveredStar = hoveredStarObject;
       } else {
         if (lastHoveredStar) {
@@ -792,10 +811,10 @@ const StarryNight = () => {
         mountRef.current.removeChild(renderer.domElement);
       }
     };
-  }, [rotSpeed, latitude]);
+  }, [rotSpeed, latitude, oriStarData]);
 
   const handleRotSpeedChange = (event) => {
-    setTempRotSpeed(parseFloat(event.target.value) / 10000);
+    setRotSpeed(parseFloat(event.target.value) / 10000);
   };
 
   const handleLatitudeChange = (event) => {
@@ -886,21 +905,6 @@ const StarryNight = () => {
           Export JPEG
         </button>
         <br />
-        <label>
-          Search Star:
-          <input
-            type="text"
-            value={searchTerm}
-            onChange={handleSearchChange}
-            style={{ width: '100px', borderRadius: '5px', marginLeft: '10px' }}
-          />
-        </label>
-        <button
-          style={{ borderRadius: '5px', marginLeft: '10px' }}
-          onClick={() => searchStar(searchTerm)}
-        >
-          Search
-        </button>
         <br />
         <button
           onClick={toggleCoordinates}
@@ -963,7 +967,10 @@ const StarryNight = () => {
             borderRadius: '5px',
           }}
         >
-          Star: {hoveredStar}
+          Star Info <br/>
+          name: {hoveredStar.name} <br/>
+          ra:  {hoveredStar.ra}<br/>
+          dec: {hoveredStar.dec}
         </div>
       )}
 
