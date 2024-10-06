@@ -824,7 +824,7 @@ const StarryNight = () => {
         mountRef.current.removeChild(renderer.domElement);
       }
     };
-  }, [rotSpeed, latitude , exRa, exDec, exDistance]);
+  }, [rotSpeed, latitude , exRa, exDec, exDistance , oriStarData]);
 
   const handleRotSpeedChange = (event) => {
     setRotSpeed(parseFloat(event.target.value) / 10000);
