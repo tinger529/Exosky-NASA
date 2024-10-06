@@ -659,7 +659,7 @@ const starData = oriStarData
   }, [rotSpeed, latitude, oriStarData]);
 
   const handleRotSpeedChange = (event) => {
-    setTempRotSpeed(parseFloat(event.target.value) / 10000);
+    setRotSpeed(parseFloat(event.target.value) / 10000);
   };
 
   const handleLatitudeChange = (event) => {
@@ -698,7 +698,8 @@ const starData = oriStarData
             min="0"
             max="100"
             value={tempRotSpeed * 10000}
-            onChange={handleRotSpeedChange}
+            onChange={(e)=>setTempRotSpeed(e.target.value / 10000)}   
+            onMouseUp={handleRotSpeedChange}
           />
         </label>
         <br />
