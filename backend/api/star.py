@@ -93,6 +93,5 @@ async def get_stars_from_earth(params: SkyviewParams):
         ))
     
     star_dict = [star.to_dict() for star in star_list]
-    response_data = json.dumps({"stars":star_dict})
     
-    return JSONResponse(status_code=200, content=response_data)
+    return JSONResponse(status_code=200, content={"stars":star_dict})

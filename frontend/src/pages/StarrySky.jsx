@@ -2,6 +2,7 @@ import React, { useRef, useEffect, useState } from 'react';
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
 import { FontLoader } from 'three/examples/jsm/loaders/FontLoader';
+import { TextGeometry } from 'three/examples/jsm/geometries/TextGeometry';
 //import Stars_catalog from './Stars_catalog';
 import Papa from 'papaparse';
 import { useNavigate } from 'react-router-dom';
@@ -56,6 +57,9 @@ const StarryNight = () => {
   const [suggestions, setSuggestions] = useState([]);
   const [wrenderer, setWRenderer] = useState(null);
   const [oriStarData, setOriStarDatar] = useState([]);
+  const [currentCoordinates, setCurrentCoordinates] = useState({ ra: 0, dec: 0 });
+  const [showCoordinates, setShowCoordinates] = useState(true);
+  const coordinateGroupRef = useRef(null);
 
   const navigate = useNavigate();
 
@@ -119,6 +123,13 @@ const StarryNight = () => {
       alert('Star not found');
     }
   };
+
+  function toggleCoordinates() {
+    setShowCoordinates(!showCoordinates);
+    if (coordinateGroupRef.current) {
+      coordinateGroupRef.current.visible = !showCoordinates;
+    }
+  }
 
   const [preRotSpeed, setPreRotSpeed] = useState(rotSpeed);
   const [tempRotSpeed, setTempRotSpeed] = useState(0.0005);
@@ -279,6 +290,8 @@ const StarryNight = () => {
             star.ra = ra;
             star.dec = dec;
             star.userData.originalSize = size * scaleFactor;
+            star.userData.ra = ra;
+            star.userData.dec = dec;
   
             sky_group.add(star);
             stars_objs.push(star);
@@ -512,15 +525,148 @@ const StarryNight = () => {
       checkStarHover();
     }
 
+    function createCoordinateGrid() {
+      const lineColor = 0xD4AF37;
+      const lineWidth = 0.25;
+      console.log('Creating coordinate grid');
+      const coordinateGroup = new THREE.Group();
+      coordinateGroupRef.current = coordinateGroup;
+    
+      // Create RA lines and labels
+      for (let i = 0; i < 12; i++) {
+        const angle = (i / 12) * Math.PI * 2;
+        const x = Math.cos(angle) * 10100;
+        const z = Math.sin(angle) * 10100;
+        
+        // Create RA line
+        const points = [];
+        for (let j = -90; j <= 90; j++) {
+          const y = 10100 * Math.sin(j * Math.PI / 180);
+          const radius = 10100 * Math.cos(j * Math.PI / 180);
+          points.push(new THREE.Vector3(x * radius / 10100, y, z * radius / 10100));
+        }
+        const geometry = new THREE.BufferGeometry().setFromPoints(points);
+        const material = new THREE.LineBasicMaterial({ 
+          color: lineColor, 
+          linewidth: lineWidth,
+          transparent: true,
+          opacity: 0.5
+        });
+        const line = new THREE.Line(geometry, material);
+        coordinateGroup.add(line);
+        
+        // Create RA label
+        const loader = new FontLoader();
+        loader.load(`${process.env.PUBLIC_URL}/fonts/helvetiker_regular.typeface.json`, (font) => {
+          const geometry = new TextGeometry(`${i*2}h`, {
+            font: font,
+            size: 200,
+            height: 5,
+          });
+          const material = new THREE.MeshBasicMaterial({ 
+            color: lineColor,
+            linewidth: lineWidth,
+            transparent: true,
+            opacity: 0.5
+          });
+          const textMesh = new THREE.Mesh(geometry, material);
+          textMesh.position.set(x, 0, z);
+          textMesh.lookAt(0, 0, 0);
+          coordinateGroup.add(textMesh);
+        });
+      }
+
+      // Create Dec lines and labels
+      for (let i = -80; i <= 80; i += 10) {
+        // Skip the line near the camera center (0 degrees declination)
+    
+        const phi = (90 - Math.abs(i)) * Math.PI / 180; // Convert to radians
+        const radius = 10100 * Math.sin(phi); // Radius of the declination circle
+        const y = 10100 * Math.cos(phi) * Math.sign(i); // Y-position of the circle
+    
+        const points = [];
+        for (let j = 0; j <= 360; j++) {
+          const theta = j * Math.PI / 180;
+          const x = radius * Math.cos(theta);
+          const z = radius * Math.sin(theta);
+          points.push(new THREE.Vector3(x, y, z));
+        }
+    
+        const geometry = new THREE.BufferGeometry().setFromPoints(points);
+        const material = new THREE.LineBasicMaterial({ 
+          color: lineColor,
+          linewidth: lineWidth,
+          transparent: true,
+          opacity: 0.5
+        });
+        const line = new THREE.Line(geometry, material);
+        coordinateGroup.add(line);
+    
+        // Create Dec label (if needed)
+        if (i % 20 === 0) {
+          const loader = new FontLoader();
+          loader.load(`${process.env.PUBLIC_URL}/fonts/helvetiker_regular.typeface.json`, (font) => {
+            const textGeometry = new TextGeometry(`${i}°`, {
+              font: font,
+              size: 200,
+              height: 5,
+            });
+            const textMaterial = new THREE.MeshBasicMaterial({ color: lineColor });
+            const textMesh = new THREE.Mesh(textGeometry, textMaterial);
+            textMesh.position.set(radius, y, 0);
+            textMesh.lookAt(0, 0, 0);
+            coordinateGroup.add(textMesh);
+          });
+        }
+      }
+
+      sky_group.add(coordinateGroup);
+    }
+  
+    
+  
+    function updateCoordinateDisplay() {
+      const vector = new THREE.Vector3();
+      camera.getWorldDirection(vector);
+    
+      // Rotate the vector to account for the sky_group rotation
+      vector.applyAxisAngle(new THREE.Vector3(0, 0, 1), -Math.PI / 2);
+    
+      const phi = Math.atan2(vector.x, vector.z);
+      const theta = Math.acos(vector.y);
+    
+      const ra = ((phi >= 0 ? phi : (2 * Math.PI + phi)) * (12 / Math.PI) + 6) % 24;
+      const dec = 90 - (theta * (180 / Math.PI));
+    
+      setCurrentCoordinates({ ra: ra.toFixed(2), dec: dec.toFixed(2) });
+    }
+
     function animate() {
       requestAnimationFrame(animate);
 
-      sky_group.rotateOnWorldAxis(axis_polar, -rotSpeed);
+      sky_group.rotateOnWorldAxis(new THREE.Vector3(1, 0, 0), -rotSpeed);
 
       controls.update();
+      updateCoordinateDisplay();
       //   checkStarHover();
 
       renderer.render(scene, camera);
+    }
+
+    function addDebugCubes() {
+      // Create a green cube for positive y-axis
+      const greenGeometry = new THREE.BoxGeometry(500, 500, 500);
+      const greenMaterial = new THREE.MeshBasicMaterial({ color: 0x00ff00 });
+      const greenCube = new THREE.Mesh(greenGeometry, greenMaterial);
+      greenCube.position.set(0, 10600, 0); // Slightly beyond the celestial sphere
+      sky_group.add(greenCube);
+    
+      // Create a red cube for negative y-axis
+      const redGeometry = new THREE.BoxGeometry(500, 500, 500);
+      const redMaterial = new THREE.MeshBasicMaterial({ color: 0xff0000 });
+      const redCube = new THREE.Mesh(redGeometry, redMaterial);
+      redCube.position.set(0, -10600, 0); // Slightly beyond the celestial sphere
+      sky_group.add(redCube);
     }
 
     function indexjs_setup() {
@@ -531,6 +677,11 @@ const StarryNight = () => {
         0.1,
         15000
       );
+
+      camera.position.set(100, 0, 0);
+
+      // Make the camera look at the center of the scene
+      // camera.lookAt(0, 0, 0);
 
       textue_loader = new THREE.TextureLoader();
       font_loader = new FontLoader();
@@ -554,7 +705,7 @@ const StarryNight = () => {
       hemi_light = new THREE.HemisphereLight(0x21266e, 0x080820, 0.2);
       scene.add(hemi_light);
 
-      camera.position.z = -0.01;
+      camera.position.z = 0.01;
 
       sky_group = new THREE.Group();
 
@@ -564,9 +715,12 @@ const StarryNight = () => {
 
       load_stars();
       load_skysphere();
+      createCoordinateGrid();
+      // addDebugCubes();
       scene.add(sky_group);
       // load_ground();
-      sky_group.rotateOnWorldAxis(unit_i, cur_rot_rad);
+      // sky_group.rotateOnWorldAxis(unit_i, cur_rot_rad);
+      sky_group.rotation.z = Math.PI/2;
 
       animate();
 
@@ -699,18 +853,7 @@ const StarryNight = () => {
             min="0"
             max="100"
             value={tempRotSpeed * 10000}
-            onChange={(e)=>setTempRotSpeed(e.target.value / 10000)}   
-            onMouseUp={handleRotSpeedChange}
-          />
-        </label>
-        <br />
-        <label>
-          Latitude:
-          <input
-            type="number"
-            value={tempLatitude}
-            onChange={handleLatitudeChange}
-            style={{ width: '60px', borderRadius: '5px', marginLeft: '10px' }}
+            onChange={handleRotSpeedChange}
           />
         </label>
         <button
@@ -722,7 +865,7 @@ const StarryNight = () => {
           }}
           onClick={applySettings}
         >
-          Set Latitude & Speed
+          Set Speed
         </button>
         <br />
         <label>Constellation Mode:</label>
@@ -762,6 +905,21 @@ const StarryNight = () => {
           Export JPEG
         </button>
         <br />
+        <br />
+        <button
+          onClick={toggleCoordinates}
+          style={{
+            cursor: 'pointer',
+            borderRadius: '5px',
+            border: 'none',
+            backgroundColor: showCoordinates ? 'green' : 'red',
+            color: 'white',
+            padding: '5px 10px',
+          }}
+        >
+          {showCoordinates ? 'Hide Coordinates' : 'Show Coordinates'}
+        </button>
+
         <ul style={{ listStyleType: 'none', padding: 0, margin: 0 }}>
           {suggestions.map((suggestion, index) => (
             <li
@@ -815,6 +973,18 @@ const StarryNight = () => {
           dec: {hoveredStar.dec}
         </div>
       )}
+
+      <div style={{
+        position: 'absolute',
+        bottom: 10,
+        right: 10,
+        color: 'white',
+        backgroundColor: 'rgba(0,0,0,0.5)',
+        padding: '5px 10px',
+        borderRadius: '5px',
+      }}>
+        RA: {currentCoordinates.ra}h, Dec: {currentCoordinates.dec}°
+      </div>
     </div>
   );
 };
